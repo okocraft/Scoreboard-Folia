@@ -1,0 +1,10 @@
+name: Gradle Build
+on: [ push, pull_request ]
+
+jobs:
+  build:
+    uses: okocraft/workflows/.github/workflows/gradle.yml@v1
+    with:
+      java-version: '17'
+      build-arguments: "build"
+      package-name: Scoreboard-Folia-Build-${{ github.run_number }}
