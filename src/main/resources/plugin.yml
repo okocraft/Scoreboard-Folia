@@ -1,0 +1,24 @@
+name: Scoreboard
+main: net.okocraft.scoreboard.ScoreboardPlugin
+version: ${project.version}
+api-version: "1.17"
+author: Siroshun09
+softdepend: [ PlaceholderAPI ]
+commands:
+  sboard:
+    aliases: [ "sb" ]
+permissions:
+  scoreboard.command:
+    default: op
+  scoreboard.command.reload:
+    default: op
+  scoreboard.command.hide:
+    default: op
+  scoreboard.command.hide.other:
+    default: op
+  scoreboard.command.show:
+    default: op
+  scoreboard.command.show.other:
+    default: op
+  scoreboard.show-on-join:
+    default: op

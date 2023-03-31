@@ -1,0 +1,41 @@
+package net.okocraft.scoreboard.board;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Collections;
+import java.util.List;
+
+public class Line {
+    public static final Line EMPTY = new Line(Collections.emptyList(), 0);
+
+    private final List<String> lines;
+    private final long interval;
+    private final boolean shouldUpdate;
+
+    public Line(@NotNull List<String> lines, long interval) {
+        this.lines = List.copyOf(lines);
+        this.shouldUpdate = !lines.isEmpty() && 0 < interval;
+        this.interval = interval;
+    }
+
+    public boolean isEmpty() {
+        return lines.isEmpty();
+    }
+
+    public int getMaxIndex() {
+        return lines.size() - 1;
+    }
+
+    @NotNull
+    public String get(int index) {
+        return lines.get(index);
+    }
+
+    public boolean shouldUpdate() {
+        return shouldUpdate;
+    }
+
+    public long getInterval() {
+        return interval;
+    }
+}
