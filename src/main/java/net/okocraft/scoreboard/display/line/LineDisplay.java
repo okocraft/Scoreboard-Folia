@@ -3,16 +3,13 @@ package net.okocraft.scoreboard.display.line;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Line;
 import net.okocraft.scoreboard.display.placeholder.Placeholders;
 import net.okocraft.scoreboard.external.PlaceholderAPIHooker;
+import net.okocraft.scoreboard.util.PlatformHelper;
 import net.okocraft.scoreboard.util.LengthChecker;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.CompletableFuture;
 
 public class LineDisplay {
 
@@ -78,15 +75,7 @@ public class LineDisplay {
         var processing = replaceResult.replaced();
 
         if (PlaceholderAPIHooker.isEnabled() && replaceResult.hasUnknownPlaceholders()) {
-            if (Bukkit.isPrimaryThread()) {
-                processing = PlaceholderAPIHooker.run(player, replaceResult.replaced());
-            } else {
-                processing =
-                        CompletableFuture.supplyAsync(
-                                () -> PlaceholderAPIHooker.run(player, replaceResult.replaced()),
-                                Bukkit.getScheduler().getMainThreadExecutor(ScoreboardPlugin.getPlugin())
-                        ).join();
-            }
+            processing = PlatformHelper.runOnPlayerScheduler(player, () -> PlaceholderAPIHooker.run(player, replaceResult.replaced())).join();
         }
 
         processing = LengthChecker.check(processing);

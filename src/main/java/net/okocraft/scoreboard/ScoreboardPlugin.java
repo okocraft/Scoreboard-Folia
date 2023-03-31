@@ -8,12 +8,12 @@ import net.okocraft.scoreboard.command.ScoreboardCommand;
 import net.okocraft.scoreboard.config.BoardManager;
 import net.okocraft.scoreboard.display.manager.BukkitDisplayManager;
 import net.okocraft.scoreboard.display.manager.DisplayManager;
+import net.okocraft.scoreboard.display.manager.FoliaDisplayManager;
 import net.okocraft.scoreboard.external.PlaceholderAPIHooker;
 import net.okocraft.scoreboard.listener.PlayerListener;
 import net.okocraft.scoreboard.listener.PluginListener;
-import net.okocraft.scoreboard.task.UpdateTask;
 import net.okocraft.scoreboard.util.LengthChecker;
-import net.okocraft.scoreboard.util.ScheduledExecutorFactory;
+import net.okocraft.scoreboard.util.PlatformHelper;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -22,14 +22,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class ScoreboardPlugin extends JavaPlugin {
-
-    private static final long MILLISECONDS_PER_TICK = 50;
 
     private static ScoreboardPlugin INSTANCE;
 
@@ -44,8 +39,6 @@ public class ScoreboardPlugin extends JavaPlugin {
                     .setDefaultLocale(Locale.ENGLISH)
                     .onDirectoryCreated(this::saveDefaultLanguages)
                     .build();
-
-    private final ScheduledExecutorService scheduler = ScheduledExecutorFactory.create(3);
 
     private BoardManager boardManager;
     private DisplayManager displayManager;
@@ -75,13 +68,14 @@ public class ScoreboardPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        playerListener = new PlayerListener(this);
-        playerListener.register();
-
         pluginListener = new PluginListener(this);
         pluginListener.register();
 
-        displayManager = new BukkitDisplayManager(this);
+        displayManager = PlatformHelper.isFolia() ? new FoliaDisplayManager(boardManager) : new BukkitDisplayManager(this);
+
+        playerListener = new PlayerListener(this);
+        playerListener.register();
+
 
         if (PlaceholderAPIHooker.checkEnabled(getServer())) {
             printPlaceholderIsAvailable();
@@ -95,24 +89,23 @@ public class ScoreboardPlugin extends JavaPlugin {
             command.setTabCompleter(impl);
         }
 
-        runAsync(this::showDefaultBoardToOnlinePlayers);
+        PlatformHelper.runAsync(this::showDefaultBoardToOnlinePlayers);
     }
 
     @Override
     public void onDisable() {
-        if (displayManager != null) {
-            displayManager.hideAllBoards();
-        }
-
         if (playerListener != null) {
             playerListener.unregister();
+        }
+
+        if (displayManager != null) {
+            displayManager.hideAllBoards();
+            displayManager.close();
         }
 
         if (pluginListener != null) {
             pluginListener.unregister();
         }
-
-        scheduler.shutdownNow();
     }
 
     public void reload() {
@@ -127,7 +120,7 @@ public class ScoreboardPlugin extends JavaPlugin {
         loadConfig();
         boardManager.reload();
 
-        runAsync(this::showDefaultBoardToOnlinePlayers);
+        PlatformHelper.runAsync(this::showDefaultBoardToOnlinePlayers);
     }
 
     @NotNull
@@ -145,26 +138,6 @@ public class ScoreboardPlugin extends JavaPlugin {
         }
 
         return displayManager;
-    }
-
-    public void runAsync(@NotNull Runnable runnable) {
-        scheduler.submit(wrapTask(runnable));
-    }
-
-    @NotNull
-    public ScheduledFuture<?> scheduleUpdateTask(@NotNull UpdateTask task, long tick) {
-        long interval = tick * MILLISECONDS_PER_TICK;
-        return scheduler.scheduleWithFixedDelay(wrapTask(task), interval, interval, TimeUnit.MILLISECONDS);
-    }
-
-    private @NotNull Runnable wrapTask(@NotNull Runnable task) {
-        return () -> {
-            try {
-                task.run();
-            } catch (Throwable e) {
-                getLogger().log(Level.SEVERE, null, e);
-            }
-        };
     }
 
     public void printPlaceholderIsAvailable() {

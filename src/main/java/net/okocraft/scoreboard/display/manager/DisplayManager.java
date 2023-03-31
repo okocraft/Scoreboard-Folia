@@ -15,4 +15,7 @@ public interface DisplayManager {
     void hideAllBoards();
 
     boolean isDisplayed(@NotNull Player player);
+
+    default void close() {
+    }
 }

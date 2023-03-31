@@ -1,6 +1,7 @@
 package net.okocraft.scoreboard.display.placeholder;
 
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.okocraft.scoreboard.util.PlatformHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -52,7 +53,7 @@ public final class Placeholders {
     private static @NotNull String processPlaceholder(@NotNull Player player, @NotNull Location locationSnapshot, @NotNull String placeholder) {
         //@formatter:off
         return switch (placeholder) {
-            case "%server_tps%" -> BigDecimal.valueOf(Bukkit.getTPS()[0]).setScale(2, RoundingMode.HALF_UP).toPlainString();
+            case "%server_tps%" -> BigDecimal.valueOf(PlatformHelper.getRegionTPS(locationSnapshot)).setScale(2, RoundingMode.HALF_UP).toPlainString();
             case "%server_online%" -> Integer.toString(Bukkit.getOnlinePlayers().size());
             case "%player_name%" -> player.getName();
             case "%player_displayname%" -> LegacyComponentSerializer.legacyAmpersand().serialize(player.displayName());

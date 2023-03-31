@@ -1,6 +1,7 @@
 package net.okocraft.scoreboard.listener;
 
 import net.okocraft.scoreboard.ScoreboardPlugin;
+import net.okocraft.scoreboard.util.PlatformHelper;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
@@ -30,7 +31,7 @@ public class PlayerListener implements Listener {
         var player = event.getPlayer();
 
         if (player.hasPermission("scoreboard.show-on-join")) {
-            plugin.runAsync(() -> plugin.getDisplayManager().showDefaultBoard(event.getPlayer()));
+            PlatformHelper.runAsync(() -> plugin.getDisplayManager().showDefaultBoard(event.getPlayer()));
         }
     }
 

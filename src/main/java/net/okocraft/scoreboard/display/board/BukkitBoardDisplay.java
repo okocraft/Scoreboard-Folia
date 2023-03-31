@@ -1,9 +1,12 @@
 package net.okocraft.scoreboard.display.board;
 
+import io.papermc.paper.util.Tick;
 import net.kyori.adventure.text.Component;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
 import net.okocraft.scoreboard.display.line.LineDisplay;
+import net.okocraft.scoreboard.task.UpdateTask;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Criteria;
@@ -17,9 +20,16 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
-public class BukkitBoardDisplay extends AbstractBoardDisplay {
+public class BukkitBoardDisplay implements BoardDisplay {
 
+    private static final int MAX_LINES = 16;
+
+    private final ScheduledExecutorService scheduler;
     private final Player player;
     private final Scoreboard scoreboard;
     private final Objective objective;
@@ -27,9 +37,11 @@ public class BukkitBoardDisplay extends AbstractBoardDisplay {
     private final LineDisplay title;
     private final List<LineDisplay> lines;
 
-    public BukkitBoardDisplay(@NotNull ScoreboardPlugin plugin, @NotNull Board board,
+    private final List<ScheduledFuture<?>> updateTasks = new ArrayList<>(MAX_LINES);
+
+    public BukkitBoardDisplay(@NotNull ScheduledExecutorService scheduler, @NotNull Board board,
                               @NotNull Player player, @NotNull Scoreboard scoreboard) {
-        super(plugin);
+        this.scheduler = scheduler;
         this.player = player;
         this.scoreboard = scoreboard;
 
@@ -74,7 +86,7 @@ public class BukkitBoardDisplay extends AbstractBoardDisplay {
 
     @Override
     public void hideBoard() {
-        player.setScoreboard(plugin.getServer().getScoreboardManager().getMainScoreboard());
+        player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         cancelUpdateTasks();
     }
 
@@ -106,5 +118,37 @@ public class BukkitBoardDisplay extends AbstractBoardDisplay {
     @NotNull
     public List<LineDisplay> getLines() {
         return lines;
+    }
+
+    private void scheduleUpdateTasks() {
+        if (getTitle().shouldUpdate()) {
+            updateTasks.add(scheduleUpdateTask(getTitle(), true, getTitle().getInterval()));
+        }
+
+        for (LineDisplay line : getLines()) {
+            if (line.shouldUpdate()) {
+                updateTasks.add(scheduleUpdateTask(line, false, line.getInterval()));
+            }
+        }
+    }
+
+    private void cancelUpdateTasks() {
+        updateTasks.stream().filter(t -> !t.isCancelled()).forEach(t -> t.cancel(true));
+        updateTasks.clear();
+    }
+
+    private @NotNull ScheduledFuture<?> scheduleUpdateTask(@NotNull LineDisplay display, boolean isTitleLine, long tick) {
+        long interval = Tick.of(tick).toMillis();
+        return scheduler.scheduleWithFixedDelay(wrapTask(new UpdateTask(this, display, isTitleLine)), interval, interval, TimeUnit.MILLISECONDS);
+    }
+
+    private @NotNull Runnable wrapTask(@NotNull Runnable task) {
+        return () -> {
+            try {
+                task.run();
+            } catch (Throwable e) {
+                ScoreboardPlugin.getPlugin().getLogger().log(Level.SEVERE, null, e);
+            }
+        };
     }
 }

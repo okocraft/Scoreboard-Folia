@@ -1,7 +1,6 @@
 package net.okocraft.scoreboard.display.board;
 
 import net.okocraft.scoreboard.display.line.LineDisplay;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -21,8 +20,4 @@ public interface BoardDisplay {
     void applyTitle();
 
     void applyLine(@NotNull LineDisplay line);
-
-    void scheduleUpdateTasks();
-
-    void cancelUpdateTasks();
 }

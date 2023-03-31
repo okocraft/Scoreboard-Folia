@@ -1,7 +1,7 @@
 package net.okocraft.scoreboard.display.manager;
 
-import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
+import net.okocraft.scoreboard.config.BoardManager;
 import net.okocraft.scoreboard.display.board.BoardDisplay;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -12,11 +12,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractDisplayManager implements DisplayManager {
 
-    protected final ScoreboardPlugin plugin;
     private final Map<UUID, BoardDisplay> displayMap = new ConcurrentHashMap<>();
+    private final BoardManager boardManager;
 
-    public AbstractDisplayManager(@NotNull ScoreboardPlugin plugin) {
-        this.plugin = plugin;
+    public AbstractDisplayManager(@NotNull BoardManager boardManager) {
+        this.boardManager = boardManager;
     }
 
     @Override
@@ -34,7 +34,7 @@ public abstract class AbstractDisplayManager implements DisplayManager {
 
     @Override
     public void showDefaultBoard(@NotNull Player player) {
-        showBoard(player, plugin.getBoardManager().getDefaultBoard());
+        showBoard(player, boardManager.getDefaultBoard());
     }
 
     @Override
