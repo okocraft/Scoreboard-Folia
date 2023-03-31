@@ -1,7 +1,8 @@
 name: Scoreboard
 main: net.okocraft.scoreboard.ScoreboardPlugin
-version: ${project.version}
-api-version: "1.17"
+version: "${projectVersion}"
+api-version: "1.19"
+folia-supported: true
 author: Siroshun09
 softdepend: [ PlaceholderAPI ]
 commands:
