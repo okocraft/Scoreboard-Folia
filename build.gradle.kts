@@ -21,7 +21,7 @@ dependencies {
     paperweight.foliaDevBundle("$mcVersion-R0.1-SNAPSHOT")
     compileOnly("me.clip:placeholderapi:2.11.3")
 
-    implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.3")
+    implementation("com.github.siroshun09.configapi:configapi-yaml:4.6.4")
     implementation("com.github.siroshun09.translationloader:translationloader:2.0.2")
 }
 
