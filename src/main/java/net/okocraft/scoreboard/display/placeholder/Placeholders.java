@@ -47,6 +47,10 @@ public final class Placeholders {
             }
         }
 
+        if (inPlaceholder) {
+            resultBuilder.append(placeholderBuilder);
+        }
+
         return new Result(resultBuilder.toString(), hasUnknownPlaceholders);
     }
 
