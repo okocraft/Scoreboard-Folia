@@ -1,14 +1,22 @@
 package net.okocraft.scoreboard.util;
 
+import io.papermc.paper.chunk.system.scheduling.ChunkFullTask;
+import io.papermc.paper.threadedregions.ThreadedRegionizer;
+import io.papermc.paper.threadedregions.TickData;
 import io.papermc.paper.threadedregions.TickRegionScheduler;
+import io.papermc.paper.threadedregions.TickRegions;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_19_R3.CraftWorld;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class PlatformHelper {
@@ -58,21 +66,56 @@ public class PlatformHelper {
 
     public static double getRegionTPS(@NotNull Location location) {
         if (FOLIA) {
-            if (Bukkit.isOwnedByCurrentRegion(location)) {
-                return getCurrentRegionTPS();
-            } else {
-                return CompletableFuture.supplyAsync(PlatformHelper::getCurrentRegionTPS, createExecutorFromRegionScheduler(location)).join();
-            }
+            return PlatformHelper.getFromRegionReport(location, report -> report.tpsData().segmentAll().average());
         } else {
             return Bukkit.getTPS()[0];
         }
     }
 
-    private static double getCurrentRegionTPS() {
-        return TickRegionScheduler.getCurrentRegion()
-                .getData().getRegionSchedulingHandle()
-                .getTickReport15s(System.nanoTime())
-                .tpsData().segmentAll().average();
+    public static <T> T getFromRegionReport(@NotNull Location location, @NotNull Function<TickData.TickReportData, T> function) {
+        if (Bukkit.isOwnedByCurrentRegion(location)) {
+            return function.apply(getRegionData().getRegionSchedulingHandle().getTickReport5s(System.nanoTime()));
+        } else {
+            return CompletableFuture.supplyAsync(
+                    () -> function.apply(getRegionData().getRegionSchedulingHandle().getTickReport5s(System.nanoTime())),
+                    createExecutorFromRegionScheduler(location)
+            ).join();
+        }
+    }
+
+    public static <T> T getFromRegionStats(@NotNull Location location, @NotNull Function<TickRegions.RegionStats, T> function) {
+        if (Bukkit.isOwnedByCurrentRegion(location)) {
+            return function.apply(getRegionData().getRegionStats());
+        } else {
+            return CompletableFuture.supplyAsync(
+                    () -> function.apply(getRegionData().getRegionStats()),
+                    createExecutorFromRegionScheduler(location)
+            ).join();
+        }
+    }
+
+    public static List<ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData>> getAllRegions() {
+        List<ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData>> regions = new ArrayList<>();
+
+        for (var bukkitWorld : Bukkit.getWorlds()) {
+            var world = ((CraftWorld) bukkitWorld).getHandle();
+            world.regioniser.computeForAllRegions(regions::add);
+        }
+
+        return regions;
+    }
+
+    public static double getLoadRate() {
+        return ChunkFullTask.loadRate(System.nanoTime());
+    }
+
+
+    public static double getGenRate() {
+        return ChunkFullTask.genRate(System.nanoTime());
+    }
+
+    private static @NotNull TickRegions.TickRegionData getRegionData() {
+        return TickRegionScheduler.getCurrentRegion().getData();
     }
 
     private static @NotNull Executor createExecutorFromPlayerScheduler(@NotNull Player player) {

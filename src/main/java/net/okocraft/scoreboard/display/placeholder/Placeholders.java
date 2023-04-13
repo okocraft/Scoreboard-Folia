@@ -1,5 +1,7 @@
 package net.okocraft.scoreboard.display.placeholder;
 
+import io.papermc.paper.threadedregions.TickData;
+import io.papermc.paper.threadedregions.TickRegions;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.okocraft.scoreboard.util.PlatformHelper;
 import org.bukkit.Bukkit;
@@ -57,18 +59,47 @@ public final class Placeholders {
     private static @NotNull String processPlaceholder(@NotNull Player player, @NotNull Location locationSnapshot, @NotNull String placeholder) {
         //@formatter:off
         return switch (placeholder) {
-            case "%server_tps%" -> BigDecimal.valueOf(PlatformHelper.getRegionTPS(locationSnapshot)).setScale(2, RoundingMode.HALF_UP).toPlainString();
-            case "%server_online%" -> Integer.toString(Bukkit.getOnlinePlayers().size());
+            case "%server_tps%" -> formatDouble(PlatformHelper.getRegionTPS(locationSnapshot));
+            case "%server_online%" -> formatInt(Bukkit.getOnlinePlayers().size());
             case "%player_name%" -> player.getName();
             case "%player_displayname%" -> LegacyComponentSerializer.legacyAmpersand().serialize(player.displayName());
             case "%player_world%" -> player.getWorld().getName();
-            case "%player_block_x%" -> Integer.toString(locationSnapshot.getBlockX());
-            case "%player_block_y%" -> Integer.toString(locationSnapshot.getBlockY());
-            case "%player_block_z%" -> Integer.toString(locationSnapshot.getBlockZ());
-            case "%player_ping%" -> Integer.toString(player.getPing());
+            case "%player_block_x%" -> formatInt(locationSnapshot.getBlockX());
+            case "%player_block_y%" -> formatInt(locationSnapshot.getBlockY());
+            case "%player_block_z%" -> formatInt(locationSnapshot.getBlockZ());
+            case "%player_ping%" -> formatInt(player.getPing());
+            default -> foliaPlaceholders(locationSnapshot, placeholder);
+        };
+        //@formatter:on
+    }
+
+    private static @NotNull String foliaPlaceholders(@NotNull Location locationSnapshot, @NotNull String placeholder) {
+        if (!PlatformHelper.isFolia()) {
+            return placeholder;
+        }
+
+        //@formatter:off
+        return switch (placeholder) {
+            case "%server_total_regions%" -> formatInt(PlatformHelper.getAllRegions().size());
+            case "%server_chunk_load_rate%" -> formatDouble(PlatformHelper.getLoadRate());
+            case "%server_chunk_gen_rate%" -> formatDouble(PlatformHelper.getGenRate());
+            case "%region_tps%" -> formatDouble(PlatformHelper.getFromRegionReport(locationSnapshot, report -> report.tpsData().segmentAll().average()));
+            case "%region_util%" -> formatDouble(PlatformHelper.getFromRegionReport(locationSnapshot, TickData.TickReportData::utilisation) * 100);
+            case "%region_mspt%" -> formatDouble(PlatformHelper.getFromRegionReport(locationSnapshot, report -> report.timePerTickData().segmentAll().average()) / 1.0E6);
+            case "%region_chunks%" -> formatInt(PlatformHelper.getFromRegionStats(locationSnapshot, TickRegions.RegionStats::getChunkCount));
+            case "%region_players%" -> formatInt(PlatformHelper.getFromRegionStats(locationSnapshot, TickRegions.RegionStats::getPlayerCount));
+            case "%region_entities%" -> formatInt(PlatformHelper.getFromRegionStats(locationSnapshot, TickRegions.RegionStats::getEntityCount));
             default -> placeholder;
         };
         //@formatter:on
+    }
+
+    private static @NotNull String formatDouble(double value) {
+        return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private static @NotNull String formatInt(int value) {
+        return Integer.toString(value);
     }
 
     private Placeholders() {
