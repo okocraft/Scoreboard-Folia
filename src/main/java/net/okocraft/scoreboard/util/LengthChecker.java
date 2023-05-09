@@ -1,54 +1,68 @@
 package net.okocraft.scoreboard.util;
 
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.ComponentIteratorType;
+import net.kyori.adventure.text.TextComponent;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collections;
 
 public final class LengthChecker {
 
-    private static final int MAX_LIMIT = 64;
-    private static int lengthLimit = MAX_LIMIT;
+    private static final int DEFAULT_LIMIT = 64;
+    private static int lengthLimit = DEFAULT_LIMIT;
 
-    private LengthChecker() {
-        throw new UnsupportedOperationException();
-    }
+    public static @NotNull TextComponent check(@NotNull TextComponent component) {
+        if (lengthLimit < component.content().length()) { // The length of the root component has already been exceeded.
+            return truncateContent(removeChildren(component), lengthLimit);
+        } else if (component.children().isEmpty()) { // The component does not have the children, so return as-is.
+            return component;
+        }
 
-    @NotNull
-    public static String check(@NotNull String str) {
-        if (lengthLimit < ChatColor.stripColor(str).length()) {
+        var builder = removeChildren(component).toBuilder(); // Remove the children from the root component.
+        int totalLength = component.content().length();
 
-            boolean bool = false;
-            int colors = 0;
-            int length = 0;
-
-            for (char c : str.toCharArray()) {
-                if (bool) {
-                    if (-1 < "0123456789abcdefklmnor".indexOf(c)) {
-                        colors += 2;
-                    }
-                    bool = false;
-                    continue;
-                }
-
-                if (c == ChatColor.COLOR_CHAR) {
-                    bool = true;
-                }
-
-                length++;
-
-                if (lengthLimit < length) {
-                    break;
-                }
+        for (var element : component.iterable(ComponentIteratorType.DEPTH_FIRST)) {
+            if (element == component) { // Ignore the root component.
+                continue;
             }
 
-            return str.substring(0, length + colors - 1);
-        } else {
-            return str;
+            if (element instanceof TextComponent textComponent) {
+                var content = textComponent.content();
+                int currentLength = totalLength; // Memorize totalLength before adding for calculating the number of characters remaining.
+                totalLength += content.length();
+
+                if (totalLength <= lengthLimit) { // There is still room for more characters.
+                    builder.append(element);
+                } else {
+                    int remaining = lengthLimit - currentLength; // Calculate how many characters are remaining.
+
+                    if (0 < remaining) { // Only the remaining number of characters is added to the result.
+                        builder.append(truncateContent(removeChildren(textComponent), remaining));
+                    }
+
+                    break; // No further components will be processed because the character limit has been reached.
+                }
+            }
         }
+
+        return builder.build();
+    }
+
+    private static @NotNull TextComponent removeChildren(@NotNull TextComponent component) {
+        return component.children().isEmpty() ? component : component.children(Collections.emptyList());
+    }
+
+    private static @NotNull TextComponent truncateContent(@NotNull TextComponent component, int length) {
+        return component.content(component.content().substring(0, length));
     }
 
     public static void setLimit(int limit) {
-        if (limit < MAX_LIMIT) {
+        if (0 < limit) {
             lengthLimit = limit;
         }
+    }
+
+    private LengthChecker() {
+        throw new UnsupportedOperationException();
     }
 }

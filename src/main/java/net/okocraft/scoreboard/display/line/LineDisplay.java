@@ -6,8 +6,8 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.okocraft.scoreboard.board.Line;
 import net.okocraft.scoreboard.display.placeholder.Placeholders;
 import net.okocraft.scoreboard.external.PlaceholderAPIHooker;
-import net.okocraft.scoreboard.util.PlatformHelper;
 import net.okocraft.scoreboard.util.LengthChecker;
+import net.okocraft.scoreboard.util.PlatformHelper;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -78,8 +78,6 @@ public class LineDisplay {
             processing = PlatformHelper.runOnPlayerScheduler(player, () -> PlaceholderAPIHooker.run(player, replaceResult.replaced())).join();
         }
 
-        processing = LengthChecker.check(processing);
-
-        return LegacyComponentSerializer.legacyAmpersand().deserialize(processing);
+        return LengthChecker.check(LegacyComponentSerializer.legacyAmpersand().deserialize(processing));
     }
 }
