@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class FoliaBoardDisplay implements BoardDisplay {
+public class PacketBasedBoardDisplay implements BoardDisplay {
 
     private final List<ScheduledTask> updateTasks = new ArrayList<>(17);
     private final AtomicBoolean visible = new AtomicBoolean();
@@ -35,7 +35,7 @@ public class FoliaBoardDisplay implements BoardDisplay {
     private final List<LineDisplay> lines;
     private final CraftPlayer player;
 
-    public FoliaBoardDisplay(@NotNull Player player, @NotNull Board board) {
+    public PacketBasedBoardDisplay(@NotNull Player player, @NotNull Board board) {
         if (player instanceof CraftPlayer craftPlayer) {
             this.player = craftPlayer;
         } else {
@@ -80,13 +80,11 @@ public class FoliaBoardDisplay implements BoardDisplay {
             var line = lines.get(i);
             var entryName = ChatColor.values()[i].toString();
             var buf = new FriendlyByteBuf(Unpooled.buffer());
-
             buf.writeUtf(line.getName());
             buf.writeByte(0);
             teamParameters(buf, line);
             buf.writeCollection(List.of(entryName), FriendlyByteBuf::writeUtf);
             player.getHandle().connection.send(new ClientboundSetPlayerTeamPacket(buf));
-
 
             var buf2 = new FriendlyByteBuf(Unpooled.buffer());
             buf2.writeUtf(entryName);

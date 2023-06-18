@@ -8,7 +8,7 @@ import net.okocraft.scoreboard.command.ScoreboardCommand;
 import net.okocraft.scoreboard.config.BoardManager;
 import net.okocraft.scoreboard.display.manager.BukkitDisplayManager;
 import net.okocraft.scoreboard.display.manager.DisplayManager;
-import net.okocraft.scoreboard.display.manager.FoliaDisplayManager;
+import net.okocraft.scoreboard.display.manager.PacketBasedDisplayManager;
 import net.okocraft.scoreboard.external.PlaceholderAPIHooker;
 import net.okocraft.scoreboard.listener.PlayerListener;
 import net.okocraft.scoreboard.listener.PluginListener;
@@ -71,7 +71,7 @@ public class ScoreboardPlugin extends JavaPlugin {
         pluginListener = new PluginListener(this);
         pluginListener.register();
 
-        displayManager = PlatformHelper.isFolia() ? new FoliaDisplayManager(boardManager) : new BukkitDisplayManager(this);
+        displayManager = PlatformHelper.isFolia() ? new PacketBasedDisplayManager(boardManager) : new BukkitDisplayManager(this);
 
         playerListener = new PlayerListener(this);
         playerListener.register();
