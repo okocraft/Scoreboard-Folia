@@ -6,7 +6,6 @@ import com.github.siroshun09.translationloader.directory.TranslationDirectory;
 import net.kyori.adventure.key.Key;
 import net.okocraft.scoreboard.command.ScoreboardCommand;
 import net.okocraft.scoreboard.config.BoardManager;
-import net.okocraft.scoreboard.display.manager.BukkitDisplayManager;
 import net.okocraft.scoreboard.display.manager.DisplayManager;
 import net.okocraft.scoreboard.display.manager.PacketBasedDisplayManager;
 import net.okocraft.scoreboard.external.PlaceholderAPIHooker;
@@ -71,7 +70,7 @@ public class ScoreboardPlugin extends JavaPlugin {
         pluginListener = new PluginListener(this);
         pluginListener.register();
 
-        displayManager = PlatformHelper.isFolia() ? new PacketBasedDisplayManager(boardManager) : new BukkitDisplayManager(this);
+        displayManager = new PacketBasedDisplayManager(boardManager);
 
         playerListener = new PlayerListener(this);
         playerListener.register();
