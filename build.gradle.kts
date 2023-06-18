@@ -5,9 +5,9 @@ plugins {
 }
 
 group = "net.okocraft.scoreboard"
-version = "4.3-folia"
+version = "4.3"
 
-val mcVersion = "1.19.4"
+val mcVersion = "1.20.1"
 val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {
