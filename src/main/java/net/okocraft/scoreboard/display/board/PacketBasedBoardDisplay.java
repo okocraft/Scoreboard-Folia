@@ -15,7 +15,6 @@ import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
 import net.okocraft.scoreboard.display.line.LineDisplay;
-import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -78,7 +77,8 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
         for (int i = 0, lineSize = lines.size(); i < lineSize; i++) {
             var line = lines.get(i);
-            var entryName = ChatColor.values()[i].toString();
+            var entryName = ENTRY_NAMES.get(i);
+
             var buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeUtf(line.getName());
             buf.writeByte(0);
