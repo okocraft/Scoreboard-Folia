@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 public class PlatformHelper {
 
     private static final boolean FOLIA;
+    private static final boolean ASYNC_SCHEDULER;
 
     static {
         boolean isFolia;
@@ -34,6 +35,21 @@ public class PlatformHelper {
         }
 
         FOLIA = isFolia;
+
+        boolean asyncScheduler;
+
+        if (FOLIA) {
+            asyncScheduler = true;
+        } else {
+            try {
+                Bukkit.class.getDeclaredMethod("getAsyncScheduler");
+                asyncScheduler = true;
+            } catch (NoSuchMethodException e) {
+                asyncScheduler = false;
+            }
+        }
+
+        ASYNC_SCHEDULER = asyncScheduler;
     }
 
     public static boolean isFolia() {
@@ -41,7 +57,7 @@ public class PlatformHelper {
     }
 
     public static void runAsync(@NotNull Runnable runnable) {
-        if (FOLIA) {
+        if (ASYNC_SCHEDULER) {
             Bukkit.getAsyncScheduler().runNow(ScoreboardPlugin.getPlugin(), $ -> runnable.run());
         } else {
             Bukkit.getScheduler().runTaskAsynchronously(ScoreboardPlugin.getPlugin(), $ -> runnable.run());
@@ -49,7 +65,7 @@ public class PlatformHelper {
     }
 
     public static <T> @NotNull CompletableFuture<T> runOnPlayerScheduler(@NotNull Player player, @NotNull Supplier<T> supplier) {
-        if (FOLIA) {
+        if (ASYNC_SCHEDULER) {
             if (Bukkit.isOwnedByCurrentRegion(player)) {
                 return CompletableFuture.completedFuture(supplier.get());
             } else {
