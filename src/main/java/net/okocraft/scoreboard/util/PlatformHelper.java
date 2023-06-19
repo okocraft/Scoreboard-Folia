@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class PlatformHelper {
+public final class PlatformHelper {
 
     private static final boolean FOLIA;
     private static final boolean ASYNC_SCHEDULER;
