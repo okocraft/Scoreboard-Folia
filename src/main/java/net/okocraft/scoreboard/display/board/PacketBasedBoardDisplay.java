@@ -23,12 +23,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PacketBasedBoardDisplay implements BoardDisplay {
 
     private final List<ScheduledTask> updateTasks = new ArrayList<>(17);
-    private final AtomicBoolean visible = new AtomicBoolean();
+
+    private final Object lock = new Object();
+    private volatile boolean visible = false;
 
     private final LineDisplay title;
     private final List<LineDisplay> lines;
@@ -66,13 +67,21 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
     @Override
     public boolean isVisible() {
-        return visible.get();
+        return visible;
     }
 
     @Override
     public void showBoard() {
-        visible.set(true);
+        synchronized (lock) {
+            if (!visible) {
+                sendShowPackets();
+                scheduleUpdateTasks();
+                visible = true;
+            }
+        }
+    }
 
+    private void sendShowPackets() {
         var setScorePackets = new ArrayList<ClientboundSetScorePacket>();
 
         for (int i = 0, lineSize = lines.size(); i < lineSize; i++) {
@@ -111,8 +120,6 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
         player.getHandle().connection.send(new ClientboundSetDisplayObjectivePacket(buf2));
 
         setScorePackets.forEach(player.getHandle().connection::send);
-
-        scheduleUpdateTasks();
     }
 
     private void teamParameters(@NotNull FriendlyByteBuf buf, @NotNull LineDisplay lineDisplay) {
@@ -127,12 +134,20 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
     @Override
     public void hideBoard() {
-        visible.set(false);
+        synchronized (lock) {
+            if (visible) {
+                sendHidePacket();
+                cancelUpdateTasks();
+                visible = false;
+            }
+        }
+    }
 
+    private void sendHidePacket() {
         var buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeUtf("sb");
-        buf.writeByte(1);
+        buf.writeByte(ClientboundSetObjectivePacket.METHOD_REMOVE);
 
         player.getHandle().connection.send(new ClientboundSetObjectivePacket(buf));
 
@@ -144,8 +159,6 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
             player.getHandle().connection.send(new ClientboundSetPlayerTeamPacket(buf2));
         }
-
-        cancelUpdateTasks();
     }
 
     @Override
@@ -201,7 +214,7 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
     }
 
     private void update(@NotNull LineDisplay display, boolean isTitleLine) {
-        if (!visible.get()) {
+        if (!visible) {
             return;
         }
 
