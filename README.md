@@ -6,6 +6,16 @@
 
 A packet-based version of [Scoreboard](https://github.com/okocraft/Scoreboard). 
 
-In Folia, Scoreboard API has been disabled (not working), so original [Scoreboard](https://github.com/okocraft/Scoreboard) cannot support it.
+## Requirements
 
-This project reimplemented the plugin that using scoreboard-related packets.
+- Java 17+
+- Paper, Folia, or its forks
+- (Optional) [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/)
+
+For more information, please read [Scoreboard's README](https://github.com/okocraft/Scoreboard).
+
+## License
+
+This project is licensed under the permissive GPL-3.0 license. Please see [LICENSE](LICENSE) for more info.
+
+Copyright © 2023, okocraft
