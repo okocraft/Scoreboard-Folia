@@ -1,0 +1,63 @@
+title:
+  interval: 0
+  list:
+    - "&8&m===&e&l Server Health &8&m==="
+
+lines:
+  empty-1:
+    interval: 0
+    list: [ ]
+  global-label:
+    interval: 0
+    list:
+      - "&b&l> &e&lGlobal:"
+  server-login:
+    interval: 60
+    list:
+      - " %server_online% &7Players"
+  server-total-regions:
+    interval: 20
+    list:
+      - " %server_total_regions% &7Regions"
+  chunk-load-rate:
+    interval: 20
+    list:
+      - " %server_chunk_load_rate%/s &7Chunk Loading"
+  chunk-gen-rate:
+    interval: 20
+    list:
+      - " %server_chunk_gen_rate%/s &7Chunk Gen"
+  server-ram:
+    interval: 20
+    list:
+      - " %server_ram_used%/%server_ram_total%MB &7Memory"
+  empty-2:
+    interval: 0
+    list: [ ]
+  region-label:
+    interval: 0
+    list:
+      - "&b&l> &e&lCurrent Region:"
+  region-tps:
+    interval: 20
+    list:
+      - " %region_tps% &7TPS"
+  region-mspt:
+    interval: 20
+    list:
+      - " %region_mspt%ms &7MSPT"
+  region-chunks:
+    interval: 60
+    list:
+      - " %region_chunks% &7Chunks"
+  region-players:
+    interval: 60
+    list:
+      - " %region_players% &7Players"
+  region-entities:
+    interval: 60
+    list:
+      - " %region_entities% &7Entities"
+  empty-3:
+    interval: 0
+    list: [ ]
