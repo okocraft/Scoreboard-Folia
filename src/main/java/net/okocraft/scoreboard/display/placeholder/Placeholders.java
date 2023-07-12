@@ -60,7 +60,11 @@ public final class Placeholders {
         //@formatter:off
         return switch (placeholder) {
             case "%server_tps%" -> formatDouble(PlatformHelper.getRegionTPS(locationSnapshot));
-            case "%server_online%" -> formatInt(Bukkit.getOnlinePlayers().size());
+            case "%server_online%" -> Integer.toString(Bukkit.getOnlinePlayers().size());
+            case "%server_ram_used%" -> toMB(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+            case "%server_ram_free%" -> toMB(Runtime.getRuntime().freeMemory());
+            case "%server_ram_total%" -> toMB(Runtime.getRuntime().totalMemory());
+            case "%server_ram_max%" -> toMB(Runtime.getRuntime().maxMemory());
             case "%player_name%" -> player.getName();
             case "%player_displayname%" -> LegacyComponentSerializer.legacyAmpersand().serialize(player.displayName());
             case "%player_world%" -> player.getWorld().getName();
@@ -92,6 +96,10 @@ public final class Placeholders {
             default -> placeholder;
         };
         //@formatter:on
+    }
+
+    private static @NotNull String toMB(long bytes) {
+        return Long.toString(bytes >> 20); // bytes / 1024 / 1024 (MB)
     }
 
     private static @NotNull String formatDouble(double value) {

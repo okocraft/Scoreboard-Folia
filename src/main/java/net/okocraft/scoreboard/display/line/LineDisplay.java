@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class LineDisplay {
 
+    public static int globalLengthLimit = 32;
+
     private final Player player;
     private final Line line;
 
@@ -31,7 +33,7 @@ public class LineDisplay {
         if (line.isEmpty()) {
             this.currentLine = Component.empty();
         } else {
-            this.currentLine = processLine(line.get(0));
+            this.currentLine = processLine(0);
         }
     }
 
@@ -50,7 +52,7 @@ public class LineDisplay {
             currentIndex = 0;
         }
 
-        currentLine = processLine(line.get(currentIndex));
+        currentLine = processLine(currentIndex);
     }
 
     public boolean isChanged() {
@@ -70,14 +72,19 @@ public class LineDisplay {
         return line.getInterval();
     }
 
-    private @NotNull TextComponent processLine(@NotNull String line) {
-        var replaceResult = Placeholders.replace(player, line); // replace built-in placeholders
+    private @NotNull TextComponent processLine(int index) {
+        var replaceResult = Placeholders.replace(player, line.get(index)); // replace built-in placeholders
         var processing = replaceResult.replaced();
 
         if (PlaceholderAPIHooker.isEnabled() && replaceResult.hasUnknownPlaceholders()) {
             processing = PlatformHelper.runOnPlayerScheduler(player, () -> PlaceholderAPIHooker.run(player, replaceResult.replaced())).join();
         }
 
-        return LengthChecker.check(LegacyComponentSerializer.legacyAmpersand().deserialize(processing));
+        int lengthLimit = line.getLengthLimit();
+
+        return LengthChecker.check(
+                LegacyComponentSerializer.legacyAmpersand().deserialize(processing),
+                lengthLimit < 0 ? globalLengthLimit : lengthLimit
+        );
     }
 }

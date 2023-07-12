@@ -1,5 +1,6 @@
 package net.okocraft.scoreboard.config;
 
+import com.github.siroshun09.configapi.api.Configuration;
 import com.github.siroshun09.configapi.yaml.YamlConfiguration;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
@@ -21,9 +22,11 @@ import java.util.stream.Collectors;
 final class BoardLoader {
 
     private static final String PATH_TITLE = "title";
-    private static final String PATH_LINE = "line";
+    private static final String PATH_LINES = "lines";
+    private static final String LEGACY_PATH_LINE = "line";
     private static final String PATH_LIST_SUFFIX = ".list";
     private static final String PATH_INTERVAL_SUFFIX = ".interval";
+    private static final String PATH_LENGTH_LIMIT_SUFFIX = ".length-limit";
 
     private BoardLoader() {
         throw new UnsupportedOperationException();
@@ -79,16 +82,13 @@ final class BoardLoader {
     }
 
     private static @NotNull Board createBoardFromYaml(@NotNull YamlConfiguration yaml) {
-        List<String> titleList = yaml.getStringList(PATH_TITLE + PATH_LIST_SUFFIX);
-        Line title;
+        Line title = createLine(yaml, PATH_TITLE);
 
-        if (titleList.isEmpty()) {
-            title = Line.EMPTY;
-        } else {
-            title = new Line(titleList, yaml.getLong(PATH_TITLE + PATH_INTERVAL_SUFFIX));
+        var section = yaml.getSection(LEGACY_PATH_LINE);
+
+        if (section == null) {
+            section = yaml.getSection(PATH_LINES);
         }
-
-        var section = yaml.getSection(PATH_LINE);
 
         List<Line> lines;
 
@@ -99,13 +99,7 @@ final class BoardLoader {
             lines = new ArrayList<>(rootKeys.size());
 
             for (String root : rootKeys) {
-                List<String> lineList = section.getStringList(root + PATH_LIST_SUFFIX);
-
-                if (lineList.isEmpty()) {
-                    lines.add(Line.EMPTY);
-                } else {
-                    lines.add(new Line(lineList, section.getLong(root + PATH_INTERVAL_SUFFIX)));
-                }
+                lines.add(createLine(section, root));
             }
         }
 
@@ -122,5 +116,18 @@ final class BoardLoader {
     private static boolean isYaml(String filename) {
         var checking = filename.toLowerCase(Locale.ENGLISH);
         return (checking.endsWith(".yml") && 4 < checking.length()) || (checking.endsWith(".yaml") && 5 < checking.length());
+    }
+
+    private static @NotNull Line createLine(@NotNull Configuration source, @NotNull String root) {
+        List<String> lineList = source.getStringList(root + PATH_LIST_SUFFIX);
+        if (lineList.isEmpty()) {
+            return Line.EMPTY;
+        } else {
+            return new Line(
+                    lineList,
+                    source.getLong(root + PATH_INTERVAL_SUFFIX),
+                    source.getInteger(root + PATH_LENGTH_LIMIT_SUFFIX, -1)
+            );
+        }
     }
 }

@@ -16,18 +16,19 @@ public class Board {
         this.lines = lines;
     }
 
-    @NotNull
-    public String getName() {
+    public @NotNull String getName() {
         return name;
     }
 
-    @NotNull
-    public Line getTitle() {
+    public @NotNull Line getTitle() {
         return title;
     }
 
-    @NotNull
-    public List<Line> getLines() {
+    public @NotNull List<Line> getLines() {
         return lines;
+    }
+
+    public @NotNull String getPermissionNode() {
+        return "scoreboard.board." + name;
     }
 }

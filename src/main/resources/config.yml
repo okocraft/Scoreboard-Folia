@@ -1,1 +1,16 @@
+#
+# ======== Scoreboard Configurations ========
+#
+#   Wiki: https://github.com/okocraft/Scoreboard/wiki
+#   GitHub: https://github.com/okocraft/Scoreboard/
+#
+# ===========================================
+#
+
+# The maximum length per line.
+#
+# This setting is used for lines that are not configured "length-limit".
+#
+# The length is based on the number of characters actually displayed and is truncated if the limit is exceeded.
+# Default: 32
 max-line-length: 32

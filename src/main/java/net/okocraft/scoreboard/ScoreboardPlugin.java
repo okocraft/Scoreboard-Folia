@@ -6,12 +6,12 @@ import com.github.siroshun09.translationloader.directory.TranslationDirectory;
 import net.kyori.adventure.key.Key;
 import net.okocraft.scoreboard.command.ScoreboardCommand;
 import net.okocraft.scoreboard.config.BoardManager;
+import net.okocraft.scoreboard.display.line.LineDisplay;
 import net.okocraft.scoreboard.display.manager.DisplayManager;
 import net.okocraft.scoreboard.display.manager.PacketBasedDisplayManager;
 import net.okocraft.scoreboard.external.PlaceholderAPIHooker;
 import net.okocraft.scoreboard.listener.PlayerListener;
 import net.okocraft.scoreboard.listener.PluginListener;
-import net.okocraft.scoreboard.util.LengthChecker;
 import net.okocraft.scoreboard.util.PlatformHelper;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -156,7 +156,7 @@ public class ScoreboardPlugin extends JavaPlugin {
     private void loadConfig() {
         try (var config = YamlConfiguration.create(getDataFolder().toPath().resolve("config.yml"))) {
             config.load();
-            LengthChecker.setLimit(Math.max(config.getInteger("max-line-length", 32), 1));
+            LineDisplay.globalLengthLimit = Math.max(config.getInteger("max-line-length", 32), 1);
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, "Could not load config.yml", e);
         }

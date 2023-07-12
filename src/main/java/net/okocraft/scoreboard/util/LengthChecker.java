@@ -1,5 +1,6 @@
 package net.okocraft.scoreboard.util;
 
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentIteratorType;
 import net.kyori.adventure.text.TextComponent;
 import org.jetbrains.annotations.NotNull;
@@ -8,10 +9,11 @@ import java.util.Collections;
 
 public final class LengthChecker {
 
-    private static final int DEFAULT_LIMIT = 64;
-    private static int lengthLimit = DEFAULT_LIMIT;
+    public static @NotNull TextComponent check(@NotNull TextComponent component, int lengthLimit) {
+        if (lengthLimit < 1) {
+            return Component.empty();
+        }
 
-    public static @NotNull TextComponent check(@NotNull TextComponent component) {
         if (lengthLimit < component.content().length()) { // The length of the root component has already been exceeded.
             return truncateContent(removeChildren(component), lengthLimit);
         } else if (component.children().isEmpty()) { // The component does not have the children, so return as-is.
@@ -54,12 +56,6 @@ public final class LengthChecker {
 
     private static @NotNull TextComponent truncateContent(@NotNull TextComponent component, int length) {
         return component.content(component.content().substring(0, length));
-    }
-
-    public static void setLimit(int limit) {
-        if (0 < limit) {
-            lengthLimit = limit;
-        }
     }
 
     private LengthChecker() {

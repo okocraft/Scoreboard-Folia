@@ -47,6 +47,11 @@ public class ShowCommand extends AbstractCommand {
                 sender.sendMessage(CommandMessage.BOARD_NOT_FOUND.apply(args[1]));
                 return;
             }
+
+            if (!args[1].equalsIgnoreCase("default") && !sender.hasPermission(board.getPermissionNode())) {
+                sender.sendMessage(CommandMessage.NO_PERMISSION.apply(board.getPermissionNode()));
+                return;
+            }
         } else {
             board = boardManager.getDefaultBoard();
         }
@@ -97,13 +102,20 @@ public class ShowCommand extends AbstractCommand {
                 result.add("default");
             }
 
-            boardManager.getCustomBoards().stream().map(Board::getName).filter(name -> name.startsWith(filter)).forEach(result::add);
+            boardManager.getCustomBoards().stream()
+                    .filter(board -> sender.hasPermission(board.getPermissionNode()))
+                    .map(Board::getName)
+                    .filter(name -> name.startsWith(filter))
+                    .forEach(result::add);
             return result;
         }
 
         if (args.length == 3 && sender.hasPermission(SHOW_PERMISSION_OTHER)) {
             var filter = args[2].toLowerCase(Locale.ENGLISH);
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName).filter(name -> name.startsWith(filter)).toList();
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase(Locale.ENGLISH).startsWith(filter))
+                    .toList();
         }
 
         return Collections.emptyList();
