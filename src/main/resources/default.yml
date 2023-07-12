@@ -36,6 +36,18 @@
 # - %player_block_z% - The block z-coordinate of the viewer's location
 # - %player_ping% - The ping of the viewer
 #
+# Placeholders for Folia:
+#
+# - %server_total_regions% - The amount of regions in the server
+# - %server_chunk_load_rate% - The current rate of loading chunks
+# - %server_chunk_gen_rate% - The current rate of generating chunks
+# - %region_tps% - The current TPS of the region where the viewer is in
+# - %region_util% - The current utilization of the region
+# - %region_mspt% - The current mspt (milli seconds per tick) of the region
+# - %region_chunks% - The number of chunks that the region has
+# - %region_players% - The number of players that the region has
+# - %region_entities% - The number of entities that the region has
+#
 # Other %-enclosed placeholders are replaced by PlaceholderAPI if available.
 #
 title:
