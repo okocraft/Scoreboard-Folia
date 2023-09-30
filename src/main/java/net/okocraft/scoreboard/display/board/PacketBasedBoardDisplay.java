@@ -83,29 +83,28 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
     private void sendShowPackets() {
         var setScorePackets = new ArrayList<ClientboundSetScorePacket>();
+        var buf = new FriendlyByteBuf(Unpooled.buffer());
 
         for (int i = 0, lineSize = lines.size(); i < lineSize; i++) {
             var line = lines.get(i);
             var entryName = ENTRY_NAMES.get(i);
 
-            var buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeUtf(line.getName());
             buf.writeByte(0);
             teamParameters(buf, line);
             buf.writeCollection(List.of(entryName), FriendlyByteBuf::writeUtf);
             player.getHandle().connection.send(new ClientboundSetPlayerTeamPacket(buf));
 
-            var buf2 = new FriendlyByteBuf(Unpooled.buffer());
-            buf2.writeUtf(entryName);
-            buf2.writeEnum(ServerScoreboard.Method.CHANGE);
-            buf2.writeUtf("sb");
-            buf2.writeVarInt(lineSize - i);
+            buf.clear();
+            buf.writeUtf(entryName);
+            buf.writeEnum(ServerScoreboard.Method.CHANGE);
+            buf.writeUtf("sb");
+            buf.writeVarInt(lineSize - i);
 
-            setScorePackets.add(new ClientboundSetScorePacket(buf2));
+            setScorePackets.add(new ClientboundSetScorePacket(buf));
         }
 
-        var buf = new FriendlyByteBuf(Unpooled.buffer());
-
+        buf.clear();
         buf.writeUtf("sb");
         buf.writeByte(0);
         buf.writeComponent(title.getCurrentLine());
@@ -113,11 +112,10 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
         player.getHandle().connection.send(new ClientboundSetObjectivePacket(buf));
 
-        var buf2 = new FriendlyByteBuf(Unpooled.buffer());
-
-        buf2.writeByte(1);
-        buf2.writeUtf("sb");
-        player.getHandle().connection.send(new ClientboundSetDisplayObjectivePacket(buf2));
+        buf.clear();
+        buf.writeByte(1);
+        buf.writeUtf("sb");
+        player.getHandle().connection.send(new ClientboundSetDisplayObjectivePacket(buf));
 
         setScorePackets.forEach(player.getHandle().connection::send);
     }
@@ -152,12 +150,11 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
         player.getHandle().connection.send(new ClientboundSetObjectivePacket(buf));
 
         for (var line : lines) {
-            var buf2 = new FriendlyByteBuf(Unpooled.buffer());
+            buf.clear();
+            buf.writeUtf(line.getName());
+            buf.writeByte(1);
 
-            buf2.writeUtf(line.getName());
-            buf2.writeByte(1);
-
-            player.getHandle().connection.send(new ClientboundSetPlayerTeamPacket(buf2));
+            player.getHandle().connection.send(new ClientboundSetPlayerTeamPacket(buf));
         }
     }
 
