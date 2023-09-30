@@ -3,21 +3,22 @@ package net.okocraft.scoreboard.util;
 import io.papermc.paper.chunk.system.scheduling.ChunkFullTask;
 import io.papermc.paper.threadedregions.ThreadedRegionizer;
 import io.papermc.paper.threadedregions.TickData;
-import io.papermc.paper.threadedregions.TickRegionScheduler;
 import io.papermc.paper.threadedregions.TickRegions;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
 
 public final class PlatformHelper {
 
@@ -82,32 +83,20 @@ public final class PlatformHelper {
 
     public static double getRegionTPS(@NotNull Location location) {
         if (FOLIA) {
-            return PlatformHelper.getFromRegionReport(location, report -> report.tpsData().segmentAll().average());
+            return getFromRegionReport(location, report -> report.tpsData().segmentAll().average());
         } else {
             return Bukkit.getTPS()[0];
         }
     }
 
-    public static <T> T getFromRegionReport(@NotNull Location location, @NotNull Function<TickData.TickReportData, T> function) {
-        if (Bukkit.isOwnedByCurrentRegion(location)) {
-            return function.apply(getRegionData().getRegionSchedulingHandle().getTickReport5s(System.nanoTime()));
-        } else {
-            return CompletableFuture.supplyAsync(
-                    () -> function.apply(getRegionData().getRegionSchedulingHandle().getTickReport5s(System.nanoTime())),
-                    createExecutorFromRegionScheduler(location)
-            ).join();
-        }
+    public static double getFromRegionReport(@NotNull Location location, @NotNull ToDoubleFunction<TickData.TickReportData> function) {
+        var data = getTickReport(location);
+        return data != null ? function.applyAsDouble(data) : 0.0;
     }
 
-    public static <T> T getFromRegionStats(@NotNull Location location, @NotNull Function<TickRegions.RegionStats, T> function) {
-        if (Bukkit.isOwnedByCurrentRegion(location)) {
-            return function.apply(getRegionData().getRegionStats());
-        } else {
-            return CompletableFuture.supplyAsync(
-                    () -> function.apply(getRegionData().getRegionStats()),
-                    createExecutorFromRegionScheduler(location)
-            ).join();
-        }
+    public static int getFromRegionStats(@NotNull Location location, @NotNull ToIntFunction<TickRegions.RegionStats> function) {
+        var stats = getRegionStats(location);
+        return stats != null ? function.applyAsInt(stats) : 0;
     }
 
     public static List<ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData>> getAllRegions() {
@@ -125,20 +114,35 @@ public final class PlatformHelper {
         return ChunkFullTask.loadRate(System.nanoTime());
     }
 
-
     public static double getGenRate() {
         return ChunkFullTask.genRate(System.nanoTime());
     }
 
-    private static @NotNull TickRegions.TickRegionData getRegionData() {
-        return TickRegionScheduler.getCurrentRegion().getData();
+    private static @Nullable TickRegions.TickRegionData getRegionData(@NotNull Location location) {
+        if (!(location.getWorld() instanceof CraftWorld world)) {
+            return null;
+        }
+
+        var region = world.getHandle().regioniser.getRegionAtSynchronised(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+
+        if (region == null) {
+            return null;
+        }
+
+        return region.getData();
+    }
+
+    private static @Nullable TickRegions.RegionStats getRegionStats(@NotNull Location location) {
+        var data = getRegionData(location);
+        return data != null ? data.getRegionStats() : null;
+    }
+
+    private static @Nullable TickData.TickReportData getTickReport(@NotNull Location location) {
+        var data = getRegionData(location);
+        return data != null ? data.getRegionSchedulingHandle().getTickReport5s(System.nanoTime()) : null;
     }
 
     private static @NotNull Executor createExecutorFromPlayerScheduler(@NotNull Player player) {
         return command -> player.getScheduler().run(ScoreboardPlugin.getPlugin(), $ -> command.run(), null);
-    }
-
-    private static @NotNull Executor createExecutorFromRegionScheduler(@NotNull Location location) {
-        return command -> Bukkit.getRegionScheduler().run(ScoreboardPlugin.getPlugin(), location, $ -> command.run());
     }
 }
