@@ -7,7 +7,7 @@ import io.papermc.paper.threadedregions.TickRegions;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R3.CraftWorld;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

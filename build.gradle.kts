@@ -7,7 +7,7 @@ plugins {
 group = "net.okocraft.scoreboard"
 version = "4.4"
 
-val mcVersion = "1.20.2"
+val mcVersion = "1.20.4"
 val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {

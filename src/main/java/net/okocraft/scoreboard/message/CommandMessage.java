@@ -21,15 +21,15 @@ public final class CommandMessage {
             permission ->
                     translatable()
                             .key("scoreboard.error.no-permission")
-                            .args(text(permission, AQUA))
+                            .arguments(text(permission, AQUA))
                             .color(RED)
                             .build();
 
     public static final SingleArgument<String> BOARD_NOT_FOUND =
-            name -> translatable("scoreboard.error.board-not-found", RED).args(text(name, AQUA));
+            name -> translatable("scoreboard.error.board-not-found", RED).arguments(text(name, AQUA));
 
     public static final SingleArgument<String> PLAYER_NOT_FOUND =
-            name -> translatable("scoreboard.error.player-not-found", RED).args(text(name, AQUA));
+            name -> translatable("scoreboard.error.player-not-found", RED).arguments(text(name, AQUA));
 
     public static final Component ONLY_PLAYER =
             translatable("scoreboard.error.only-player", RED);
@@ -37,14 +37,12 @@ public final class CommandMessage {
     public static final Component SHOW_HELP = createCommandHelp("/sb show <board> {player}", "scoreboard.show.help");
 
     public static final SingleArgument<Board> SHOW_BOARD_SELF =
-            board ->
-                    translatable("scoreboard.show.self", GRAY)
-                            .args(text(board.getName(), AQUA));
+            board -> translatable("scoreboard.show.self", GRAY).arguments(text(board.getName(), AQUA));
 
     public static final DoubleArgument<Board, Player> SHOW_BOARD_OTHER =
             (board, target) ->
                     translatable("scoreboard.show.other", GRAY)
-                            .args(
+                            .arguments(
                                     text(board.getName(), AQUA),
                                     text(target.getName(), AQUA)
                             );
@@ -56,18 +54,12 @@ public final class CommandMessage {
     public static final Component HIDE_SELF = translatable("scoreboard.hide.self", GRAY);
 
     public static final SingleArgument<Player> HIDE_OTHER =
-            target ->
-                    translatable("scoreboard.hide.other", GRAY)
-                            .args(
-                                    text(target.getName(), AQUA)
-                            );
+            target -> translatable("scoreboard.hide.other", GRAY).arguments(text(target.getName(), AQUA));
 
     public static final Component RELOAD_HELP = createCommandHelp("/sb reload", "scoreboard.reload.help");
 
     public static final SingleArgument<Throwable> RELOAD_ERROR =
-            throwable ->
-                    translatable("scoreboard.reload.error", RED)
-                            .args(text(throwable.getMessage(), WHITE));
+            throwable -> translatable("scoreboard.reload.error", RED).arguments(text(throwable.getMessage(), WHITE));
 
     public static final Component RELOAD_FINISH = translatable("scoreboard.reload.finish", GRAY);
 

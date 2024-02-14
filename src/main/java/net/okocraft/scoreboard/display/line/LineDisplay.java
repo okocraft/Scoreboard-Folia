@@ -17,7 +17,7 @@ public class LineDisplay {
 
     private final Player player;
     private final Line line;
-
+    private final int num;
     private final String name;
 
     private TextComponent prevLine;
@@ -28,6 +28,7 @@ public class LineDisplay {
     public LineDisplay(@NotNull Player player, @NotNull Line line, int num) {
         this.player = player;
         this.line = line;
+        this.num = num;
         this.name = String.valueOf(num);
 
         if (line.isEmpty()) {
@@ -35,6 +36,10 @@ public class LineDisplay {
         } else {
             this.currentLine = processLine(0);
         }
+    }
+
+    public int getLineNumber() {
+        return this.num;
     }
 
     public @NotNull String getName() {
