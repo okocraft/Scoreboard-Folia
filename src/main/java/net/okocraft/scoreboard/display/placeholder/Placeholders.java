@@ -84,9 +84,10 @@ public final class Placeholders {
 
         //@formatter:off
         return switch (placeholder) {
-            case "%server_total_regions%" -> formatInt(PlatformHelper.getAllRegions().size());
+            case "%server_total_regions%" -> formatInt(PlatformHelper.getGlobalRegionCount());
             case "%server_chunk_load_rate%" -> formatDouble(PlatformHelper.getLoadRate());
             case "%server_chunk_gen_rate%" -> formatDouble(PlatformHelper.getGenRate());
+            case "%world_total_regions%" -> formatInt(PlatformHelper.getWorldRegionCount(locationSnapshot.getWorld()));
             case "%region_tps%" -> formatDouble(PlatformHelper.getFromRegionReport(locationSnapshot, report -> report.tpsData().segmentAll().average()));
             case "%region_util%" -> formatDouble(PlatformHelper.getFromRegionReport(locationSnapshot, TickData.TickReportData::utilisation) * 100);
             case "%region_mspt%" -> formatDouble(PlatformHelper.getFromRegionReport(locationSnapshot, report -> report.timePerTickData().segmentAll().average()) / 1.0E6);

@@ -1,5 +1,6 @@
 package net.okocraft.scoreboard.util;
 
+import ca.spottedleaf.concurrentutil.map.SWMRLong2ObjectHashTable;
 import io.papermc.paper.chunk.system.scheduling.ChunkFullTask;
 import io.papermc.paper.threadedregions.ThreadedRegionizer;
 import io.papermc.paper.threadedregions.TickData;
@@ -7,13 +8,14 @@ import io.papermc.paper.threadedregions.TickRegions;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_20_R3.CraftWorld;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -24,6 +26,7 @@ public final class PlatformHelper {
 
     private static final boolean FOLIA;
     private static final boolean ASYNC_SCHEDULER;
+    private static final VarHandle FOLIA_REGIONIZER_REGIONS_BY_ID;
 
     static {
         boolean isFolia;
@@ -51,6 +54,19 @@ public final class PlatformHelper {
         }
 
         ASYNC_SCHEDULER = asyncScheduler;
+
+        if (FOLIA) {
+            VarHandle regionsById;
+            try {
+                var regionsByIdField = ThreadedRegionizer.class.getDeclaredField("regionsById");
+                regionsById = MethodHandles.privateLookupIn(ThreadedRegionizer.class, MethodHandles.lookup()).unreflectVarHandle(regionsByIdField);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+            FOLIA_REGIONIZER_REGIONS_BY_ID = regionsById;
+        } else {
+            FOLIA_REGIONIZER_REGIONS_BY_ID = null;
+        }
     }
 
     public static boolean isFolia() {
@@ -99,15 +115,20 @@ public final class PlatformHelper {
         return stats != null ? function.applyAsInt(stats) : 0;
     }
 
-    public static List<ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData>> getAllRegions() {
-        List<ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData>> regions = new ArrayList<>();
+    public static int getGlobalRegionCount() {
+        int count = 0;
 
         for (var bukkitWorld : Bukkit.getWorlds()) {
-            var world = ((CraftWorld) bukkitWorld).getHandle();
-            world.regioniser.computeForAllRegions(regions::add);
+            count += getWorldRegionCount(bukkitWorld);
         }
 
-        return regions;
+        return count;
+    }
+
+    public static int getWorldRegionCount(World bukkitWorld) {
+        var world = ((CraftWorld) bukkitWorld).getHandle();
+        var regionsById = (SWMRLong2ObjectHashTable<?>) FOLIA_REGIONIZER_REGIONS_BY_ID.get(world.regioniser);
+        return regionsById.size();
     }
 
     public static double getLoadRate() {
