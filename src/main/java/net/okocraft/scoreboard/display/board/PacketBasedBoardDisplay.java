@@ -3,6 +3,7 @@ package net.okocraft.scoreboard.display.board;
 import io.netty.buffer.Unpooled;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import io.papermc.paper.util.Tick;
 import net.kyori.adventure.text.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
@@ -19,6 +20,7 @@ import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
 import net.okocraft.scoreboard.display.line.LineDisplay;
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class PacketBasedBoardDisplay implements BoardDisplay {
 
@@ -239,7 +242,8 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
     }
 
     private ScheduledTask scheduleUpdateTask(@NotNull LineDisplay display, boolean isTitleLine, long interval) {
-        return player.getScheduler().runAtFixedRate(ScoreboardPlugin.getPlugin(), $ -> update(display, isTitleLine), null, interval, interval);
+        var duration = Tick.of(interval);
+        return Bukkit.getAsyncScheduler().runAtFixedRate(ScoreboardPlugin.getPlugin(), $ -> update(display, isTitleLine), duration.toMillis(), duration.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     private void update(@NotNull LineDisplay display, boolean isTitleLine) {
