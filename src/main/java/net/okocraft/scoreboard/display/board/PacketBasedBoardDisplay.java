@@ -5,17 +5,13 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import io.papermc.paper.util.Tick;
 import net.kyori.adventure.text.Component;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.numbers.BlankFormat;
 import net.minecraft.network.chat.numbers.NumberFormatTypes;
 import net.minecraft.network.protocol.game.ClientboundSetDisplayObjectivePacket;
 import net.minecraft.network.protocol.game.ClientboundSetObjectivePacket;
-import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import net.minecraft.network.protocol.game.ClientboundSetScorePacket;
 import net.minecraft.world.scores.DisplaySlot;
-import net.minecraft.world.scores.Team;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
@@ -43,12 +39,10 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
     private final LineDisplay title;
     private final List<LineDisplay> lines;
     private final CraftPlayer player;
-    private final boolean isBedrockEdition;
 
     public PacketBasedBoardDisplay(@NotNull Player player, @NotNull Board board) {
         if (player instanceof CraftPlayer craftPlayer) {
             this.player = craftPlayer;
-            this.isBedrockEdition = player.getUniqueId().toString().startsWith("00000000");
         } else {
             throw new IllegalArgumentException(player + " is not CraftPlayer");
         }
@@ -108,21 +102,7 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
         for (int i = 0, lineSize = lines.size(); i < lineSize; i++) {
             var line = lines.get(i);
-
-            if (this.isBedrockEdition) { // Bedrock Edition does not support rendering the display name of score
-                var entryName = ENTRY_NAMES.get(i);
-
-                buf.clear();
-                buf.writeUtf(line.getName()); // team name
-                buf.writeByte(0); // method: ADD
-                teamParameters(buf, line); // parameters
-                buf.writeCollection(List.of(entryName), FriendlyByteBuf::writeUtf); // players
-                this.player.getHandle().connection.send(new ClientboundSetPlayerTeamPacket(buf));
-
-                setScorePackets.add(createSetScorePacket(entryName, lineSize - i, null));
-            } else {
-                setScorePackets.add(createSetScorePacket(line.getName(), lineSize - i, line.getCurrentLine()));
-            }
+            setScorePackets.add(createSetScorePacket(line.getName(), lineSize - i, line.getCurrentLine()));
         }
 
         buf.clear();
@@ -146,16 +126,6 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
         );
     }
 
-    private static void teamParameters(@NotNull FriendlyByteBuf buf, @NotNull LineDisplay lineDisplay) {
-        buf.writeComponent(net.minecraft.network.chat.Component.empty()); // display name
-        buf.writeByte(3); // options
-        buf.writeUtf(Team.Visibility.ALWAYS.name);
-        buf.writeUtf(Team.CollisionRule.ALWAYS.name);
-        buf.writeEnum(ChatFormatting.RESET);
-        buf.writeComponent(lineDisplay.getCurrentLine()); // prefix
-        buf.writeComponent(CommonComponents.EMPTY); // suffix
-    }
-
     @Override
     public void hideBoard() {
         synchronized (lock) {
@@ -175,16 +145,6 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
         buf.writeByte(ClientboundSetObjectivePacket.METHOD_REMOVE); // method
 
         player.getHandle().connection.send(new ClientboundSetObjectivePacket(buf));
-
-        if (this.isBedrockEdition) {
-            for (var line : lines) {
-                buf.clear();
-                buf.writeUtf(line.getName()); // entry name
-                buf.writeByte(1); // method: remove
-
-                player.getHandle().connection.send(new ClientboundSetPlayerTeamPacket(buf));
-            }
-        }
     }
 
     @Override
@@ -210,18 +170,7 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
         if (!line.isChanged()) {
             return;
         }
-
-        if (this.isBedrockEdition) {
-            var buf = new FriendlyByteBuf(Unpooled.buffer());
-
-            buf.writeUtf(line.getName()); // team name
-            buf.writeByte(2); // method: modify
-            teamParameters(buf, line); // parameters
-
-            player.getHandle().connection.send(new ClientboundSetPlayerTeamPacket(buf));
-        } else {
-            player.getHandle().connection.send(createSetScorePacket(line.getName(), lines.size() - line.getLineNumber(), line.getCurrentLine()));
-        }
+        player.getHandle().connection.send(createSetScorePacket(line.getName(), lines.size() - line.getLineNumber(), line.getCurrentLine()));
     }
 
     private void scheduleUpdateTasks() {
