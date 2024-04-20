@@ -1,7 +1,7 @@
 package net.okocraft.scoreboard.config;
 
-import com.github.siroshun09.configapi.api.Configuration;
-import com.github.siroshun09.configapi.yaml.YamlConfiguration;
+import com.github.siroshun09.configapi.core.node.MapNode;
+import com.github.siroshun09.configapi.format.yaml.YamlFormat;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
 import net.okocraft.scoreboard.board.Line;
@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -22,26 +21,19 @@ import java.util.stream.Collectors;
 final class BoardLoader {
 
     private static final String PATH_TITLE = "title";
-    private static final String PATH_LINES = "lines";
     private static final String LEGACY_PATH_LINE = "line";
-    private static final String PATH_LIST_SUFFIX = ".list";
-    private static final String PATH_INTERVAL_SUFFIX = ".interval";
-    private static final String PATH_LENGTH_LIMIT_SUFFIX = ".length-limit";
+    private static final String PATH_LINES = "lines";
+    private static final String PATH_LIST = "list";
+    private static final String PATH_INTERVAL = "interval";
+    private static final String PATH_LENGTH_LIMIT = "length-limit";
 
     private BoardLoader() {
         throw new UnsupportedOperationException();
     }
 
-    static @NotNull Board loadDefaultBoard(@NotNull ScoreboardPlugin plugin) {
-        var yaml = YamlConfiguration.create(plugin.getDataFolder().toPath().resolve("default.yml"));
-
-        try {
-            yaml.load();
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Could not load default.yml", e);
-        }
-
-        return createBoardFromYaml(yaml);
+    static @NotNull Board loadDefaultBoard(@NotNull ScoreboardPlugin plugin) throws IOException {
+        var filepath = plugin.saveResource("default.yml");
+        return createBoardFromNode(getBoardName(filepath), YamlFormat.DEFAULT.load(filepath));
     }
 
     static @NotNull @Unmodifiable List<Board> loadCustomBoards(@NotNull ScoreboardPlugin plugin) {
@@ -62,18 +54,15 @@ final class BoardLoader {
                     .filter(Files::isRegularFile)
                     .filter(Files::isReadable)
                     .filter(p -> checkFilename(p.getFileName().toString()))
-                    .map(YamlConfiguration::create)
-                    .map(yaml -> {
+                    .map(filepath -> {
                         try {
-                            yaml.load();
-                            return yaml;
+                            return createBoardFromNode(getBoardName(filepath), YamlFormat.DEFAULT.load(filepath));
                         } catch (IOException e) {
-                            plugin.getLogger().log(Level.SEVERE, "Could not load " + yaml.getPath().getFileName(), e);
+                            plugin.getLogger().log(Level.SEVERE, "Could not load " + filepath.getFileName(), e);
                             return null;
                         }
                     })
                     .filter(Objects::nonNull)
-                    .map(BoardLoader::createBoardFromYaml)
                     .collect(Collectors.toList());
         } catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "Could not load board files", e);
@@ -81,31 +70,22 @@ final class BoardLoader {
         }
     }
 
-    private static @NotNull Board createBoardFromYaml(@NotNull YamlConfiguration yaml) {
-        Line title = createLine(yaml, PATH_TITLE);
-
-        var section = yaml.getSection(LEGACY_PATH_LINE);
-
-        if (section == null) {
-            section = yaml.getSection(PATH_LINES);
-        }
+    static @NotNull Board createBoardFromNode(@NotNull String name, @NotNull MapNode node) {
+        Line title = createLine(node.getMap(PATH_TITLE));
 
         List<Line> lines;
 
-        if (section == null) {
-            lines = Collections.emptyList();
+        if (node.getOrDefault(LEGACY_PATH_LINE, node.get(PATH_LINES)) instanceof MapNode linesSection) {
+            lines = linesSection.value().values().stream()
+                    .filter(MapNode.class::isInstance)
+                    .map(MapNode.class::cast)
+                    .map(BoardLoader::createLine)
+                    .toList();
         } else {
-            var rootKeys = section.getKeyList();
-            lines = new ArrayList<>(rootKeys.size());
-
-            for (String root : rootKeys) {
-                lines.add(createLine(section, root));
-            }
+            lines = Collections.emptyList();
         }
 
-        var name = yaml.getPath().getFileName().toString();
-
-        return new Board(name.substring(0, name.lastIndexOf('.')), title, lines);
+        return new Board(name, title, lines);
     }
 
     private static boolean checkFilename(String filename) {
@@ -118,16 +98,17 @@ final class BoardLoader {
         return (checking.endsWith(".yml") && 4 < checking.length()) || (checking.endsWith(".yaml") && 5 < checking.length());
     }
 
-    private static @NotNull Line createLine(@NotNull Configuration source, @NotNull String root) {
-        List<String> lineList = source.getStringList(root + PATH_LIST_SUFFIX);
+    private static String getBoardName(Path filepath) {
+        var name = filepath.getFileName().toString();
+        return name.substring(0, name.lastIndexOf('.'));
+    }
+
+    private static @NotNull Line createLine(@NotNull MapNode source) {
+        List<String> lineList = source.getList(PATH_LIST).asList(String.class);
         if (lineList.isEmpty()) {
             return Line.EMPTY;
         } else {
-            return new Line(
-                    lineList,
-                    source.getLong(root + PATH_INTERVAL_SUFFIX),
-                    source.getInteger(root + PATH_LENGTH_LIMIT_SUFFIX, -1)
-            );
+            return new Line(lineList, source.getLong(PATH_INTERVAL), source.getInteger(PATH_LENGTH_LIMIT, -1));
         }
     }
 }

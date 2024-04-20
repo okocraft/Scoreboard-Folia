@@ -1,11 +1,12 @@
 package net.okocraft.scoreboard.command.subcommand;
 
+import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.kyori.adventure.text.Component;
 import net.okocraft.scoreboard.board.Board;
 import net.okocraft.scoreboard.command.AbstractCommand;
 import net.okocraft.scoreboard.config.BoardManager;
 import net.okocraft.scoreboard.display.manager.DisplayManager;
-import net.okocraft.scoreboard.message.CommandMessage;
+import net.okocraft.scoreboard.message.Messages;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -32,24 +33,24 @@ public class ShowCommand extends AbstractCommand {
     }
 
     @Override
-    public @NotNull Component getHelp() {
-        return CommandMessage.SHOW_HELP;
+    public @NotNull Component getHelp(@NotNull MiniMessageSource msgSrc) {
+        return Messages.SHOW_HELP.create(msgSrc);
     }
 
     @Override
-    public void onCommand(@NotNull CommandSender sender, @NotNull String[] args) {
+    public void onCommand(@NotNull CommandSender sender, @NotNull String[] args, @NotNull MiniMessageSource msgSrc) {
         Board board;
 
         if (1 < args.length) {
             board = searchForBoard(args[1]);
 
             if (board == null) {
-                sender.sendMessage(CommandMessage.BOARD_NOT_FOUND.apply(args[1]));
+                Messages.BOARD_NOT_FOUND.apply(args[1]).source(msgSrc).send(sender);
                 return;
             }
 
-            if (!args[1].equalsIgnoreCase("default") && !sender.hasPermission(board.getPermissionNode())) {
-                sender.sendMessage(CommandMessage.NO_PERMISSION.apply(board.getPermissionNode()));
+            if (!args[0].equalsIgnoreCase("default") && !sender.hasPermission(board.getPermissionNode())) {
+                Messages.NO_PERMISSION.apply(board.getPermissionNode()).source(msgSrc).send(sender);
                 return;
             }
         } else {
@@ -60,21 +61,21 @@ public class ShowCommand extends AbstractCommand {
 
         if (2 < args.length) {
             if (!sender.hasPermission(SHOW_PERMISSION_OTHER)) {
-                sender.sendMessage(CommandMessage.NO_PERMISSION.apply(SHOW_PERMISSION_OTHER));
+                Messages.NO_PERMISSION.apply(SHOW_PERMISSION_OTHER).source(msgSrc).send(sender);
                 return;
             }
 
             target = Bukkit.getPlayer(args[2]);
 
             if (target == null) {
-                sender.sendMessage(CommandMessage.PLAYER_NOT_FOUND.apply(args[2]));
+                Messages.PLAYER_NOT_FOUND.apply(args[2]).source(msgSrc).send(sender);
                 return;
             }
         } else {
             if (sender instanceof Player player) {
                 target = player;
             } else {
-                sender.sendMessage(CommandMessage.ONLY_PLAYER);
+                Messages.ONLY_PLAYER.source(msgSrc).send(sender);
                 return;
             }
         }
@@ -82,9 +83,9 @@ public class ShowCommand extends AbstractCommand {
         displayManager.showBoard(target, board);
 
         if (sender.equals(target)) {
-            sender.sendMessage(CommandMessage.SHOW_BOARD_SELF.apply(board));
+            Messages.SHOW_SELF.apply(board).source(msgSrc).send(sender);
         } else {
-            sender.sendMessage(CommandMessage.SHOW_BOARD_OTHER.apply(board, target));
+            Messages.SHOW_OTHER.apply(board, target).source(msgSrc).send(sender);
         }
     }
 

@@ -1,10 +1,14 @@
 package net.okocraft.scoreboard.command;
 
+import com.github.siroshun09.messages.minimessage.localization.MiniMessageLocalization;
+import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.command.subcommand.HideCommand;
 import net.okocraft.scoreboard.command.subcommand.ReloadCommand;
 import net.okocraft.scoreboard.command.subcommand.ShowCommand;
-import net.okocraft.scoreboard.message.CommandMessage;
+import net.okocraft.scoreboard.message.Messages;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,17 +21,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY;
-import static net.kyori.adventure.text.format.NamedTextColor.GOLD;
-
 public class ScoreboardCommand implements CommandExecutor, TabCompleter {
 
     private static final String COMMAND_PERMISSION = "scoreboard.command";
 
+    private final MiniMessageLocalization localization;
     private final SubCommandHolder subCommandHolder;
 
     public ScoreboardCommand(@NotNull ScoreboardPlugin plugin) {
+        this.localization = plugin.getLocalization();
         subCommandHolder = new SubCommandHolder(
                 new ShowCommand(plugin.getBoardManager(), plugin.getDisplayManager()),
                 new HideCommand(plugin.getDisplayManager()),
@@ -38,29 +40,31 @@ public class ScoreboardCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
                              @NotNull String label, @NotNull String[] args) {
+        var msgSrc = this.localization.findSource(sender);
+
         if (!(sender.hasPermission(COMMAND_PERMISSION))) {
-            sender.sendMessage(CommandMessage.NO_PERMISSION.apply(COMMAND_PERMISSION));
+            Messages.NO_PERMISSION.apply(COMMAND_PERMISSION).source(msgSrc).send(sender);
             return true;
         }
 
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            sendHelp(sender);
+            sendHelp(sender, msgSrc);
             return true;
         }
 
         var optionalSubCommand = subCommandHolder.search(args[0]);
 
         if (optionalSubCommand.isEmpty()) {
-            sendHelp(sender);
+            sendHelp(sender, msgSrc);
             return true;
         }
 
         var subCommand = optionalSubCommand.get();
 
         if (sender.hasPermission(subCommand.getPermissionNode())) {
-            subCommand.onCommand(sender, args);
+            subCommand.onCommand(sender, args, msgSrc);
         } else {
-            sender.sendMessage(CommandMessage.NO_PERMISSION.apply(subCommand.getPermissionNode()));
+            Messages.NO_PERMISSION.apply(subCommand.getPermissionNode()).source(msgSrc).send(sender);
         }
 
         return true;
@@ -89,16 +93,11 @@ public class ScoreboardCommand implements CommandExecutor, TabCompleter {
                 .orElse(Collections.emptyList());
     }
 
-    private void sendHelp(@NotNull CommandSender sender) {
-        sender.sendMessage(
-                text("============================== ", DARK_GRAY)
-                        .append(text("Scoreboard Help", GOLD))
-                        .append(text(" ============================== ", DARK_GRAY))
-        );
-
-        subCommandHolder.getSubCommands()
-                .stream()
-                .map(net.okocraft.scoreboard.command.Command::getHelp)
-                .forEach(sender::sendMessage);
+    private void sendHelp(@NotNull CommandSender sender, @NotNull MiniMessageSource msgSrc) {
+        Messages.COMMAND_HELP_HEADER.source(msgSrc).send(sender);
+        sender.sendMessage(Component.join(
+                JoinConfiguration.newlines(),
+                ((Iterable<Component>) subCommandHolder.getSubCommands().stream().map(cmd -> cmd.getHelp(msgSrc))::iterator)
+        ));
     }
 }

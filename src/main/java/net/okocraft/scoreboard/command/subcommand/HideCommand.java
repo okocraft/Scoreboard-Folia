@@ -1,9 +1,10 @@
 package net.okocraft.scoreboard.command.subcommand;
 
+import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.kyori.adventure.text.Component;
 import net.okocraft.scoreboard.command.AbstractCommand;
 import net.okocraft.scoreboard.display.manager.DisplayManager;
-import net.okocraft.scoreboard.message.CommandMessage;
+import net.okocraft.scoreboard.message.Messages;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -18,6 +19,7 @@ public class HideCommand extends AbstractCommand {
 
     private static final String HIDE_PERMISSION = "scoreboard.command.hide";
     private static final String HIDE_PERMISSION_OTHER = HIDE_PERMISSION + ".other";
+
     private final DisplayManager displayManager;
 
     public HideCommand(@NotNull DisplayManager displayManager) {
@@ -26,31 +28,31 @@ public class HideCommand extends AbstractCommand {
     }
 
     @Override
-    public @NotNull Component getHelp() {
-        return CommandMessage.HIDE_HELP;
+    public @NotNull Component getHelp(@NotNull MiniMessageSource msgSrc) {
+        return Messages.HIDE_HELP.create(msgSrc);
     }
 
     @Override
-    public void onCommand(@NotNull CommandSender sender, @NotNull String[] args) {
+    public void onCommand(@NotNull CommandSender sender, @NotNull String[] args, @NotNull MiniMessageSource msgSrc) {
         Player target;
 
         if (1 < args.length) {
             if (!sender.hasPermission(HIDE_PERMISSION_OTHER)) {
-                sender.sendMessage(CommandMessage.NO_PERMISSION.apply(HIDE_PERMISSION_OTHER));
+                Messages.NO_PERMISSION.apply(HIDE_PERMISSION_OTHER).source(msgSrc).send(sender);
                 return;
             }
 
             target = Bukkit.getPlayer(args[1]);
 
             if (target == null) {
-                sender.sendMessage(CommandMessage.PLAYER_NOT_FOUND.apply(args[1]));
+                Messages.PLAYER_NOT_FOUND.apply(args[1]).source(msgSrc).send(sender);
                 return;
             }
         } else {
             if (sender instanceof Player player) {
                 target = player;
             } else {
-                sender.sendMessage(CommandMessage.ONLY_PLAYER);
+                Messages.ONLY_PLAYER.source(msgSrc).send(sender);
                 return;
             }
         }
@@ -58,14 +60,14 @@ public class HideCommand extends AbstractCommand {
         if (displayManager.isDisplayed(target)) {
             displayManager.hideBoard(target);
         } else {
-            sender.sendMessage(CommandMessage.HIDE_ALREADY);
+            Messages.HIDE_ALREADY.source(msgSrc).send(sender);
             return;
         }
 
         if (sender.equals(target)) {
-            sender.sendMessage(CommandMessage.HIDE_SELF);
+            Messages.HIDE_SELF.source(msgSrc).send(sender);
         } else {
-            sender.sendMessage(CommandMessage.HIDE_OTHER.apply(target));
+            Messages.HIDE_OTHER.apply(target).source(msgSrc).send(sender);
         }
     }
 

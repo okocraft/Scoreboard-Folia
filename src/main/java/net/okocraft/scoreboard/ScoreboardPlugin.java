@@ -1,9 +1,12 @@
 package net.okocraft.scoreboard;
 
-import com.github.siroshun09.configapi.api.util.ResourceUtils;
-import com.github.siroshun09.configapi.yaml.YamlConfiguration;
-import com.github.siroshun09.translationloader.directory.TranslationDirectory;
-import net.kyori.adventure.key.Key;
+import com.github.siroshun09.configapi.format.yaml.YamlFormat;
+import com.github.siroshun09.messages.api.directory.DirectorySource;
+import com.github.siroshun09.messages.api.directory.MessageProcessors;
+import com.github.siroshun09.messages.api.source.StringMessageMap;
+import com.github.siroshun09.messages.api.util.PropertiesFile;
+import com.github.siroshun09.messages.minimessage.localization.MiniMessageLocalization;
+import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.okocraft.scoreboard.command.ScoreboardCommand;
 import net.okocraft.scoreboard.config.BoardManager;
 import net.okocraft.scoreboard.display.line.LineDisplay;
@@ -12,15 +15,20 @@ import net.okocraft.scoreboard.display.manager.PacketBasedDisplayManager;
 import net.okocraft.scoreboard.external.PlaceholderAPIHooker;
 import net.okocraft.scoreboard.listener.PlayerListener;
 import net.okocraft.scoreboard.listener.PluginListener;
+import net.okocraft.scoreboard.message.Messages;
 import net.okocraft.scoreboard.util.PlatformHelper;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 public class ScoreboardPlugin extends JavaPlugin {
@@ -31,15 +39,10 @@ public class ScoreboardPlugin extends JavaPlugin {
         return Objects.requireNonNull(INSTANCE);
     }
 
-    private final TranslationDirectory translationDirectory =
-            TranslationDirectory.newBuilder()
-                    .setKey(Key.key("scoreboard:languages"))
-                    .setDirectory(getDataFolder().toPath().resolve("languages"))
-                    .setDefaultLocale(Locale.ENGLISH)
-                    .onDirectoryCreated(this::saveDefaultLanguages)
-                    .build();
+    private final BoardManager boardManager = new BoardManager(this);
 
-    private BoardManager boardManager;
+    private boolean boardLoaded;
+    private MiniMessageLocalization localization;
     private DisplayManager displayManager;
     private PlayerListener playerListener;
     private PluginListener pluginListener;
@@ -48,21 +51,8 @@ public class ScoreboardPlugin extends JavaPlugin {
     public void onLoad() {
         INSTANCE = this;
 
-        try {
-            saveDefaultFiles();
-        } catch (IOException e) {
-            getLogger().log(Level.SEVERE, "Could not save default files", e);
-        }
-
-        try {
-            translationDirectory.load();
-        } catch (IOException e) {
-            getLogger().log(Level.SEVERE, "Could not load languages", e);
-        }
-
-        loadConfig();
-        boardManager = new BoardManager(this);
-        boardManager.reload();
+        this.boardLoaded = this.reloadSettings(ex -> {
+        });
     }
 
     @Override
@@ -88,7 +78,9 @@ public class ScoreboardPlugin extends JavaPlugin {
             command.setTabCompleter(impl);
         }
 
-        PlatformHelper.runAsync(this::showDefaultBoardToOnlinePlayers);
+        if (this.boardLoaded) {
+            PlatformHelper.runAsync(this::showDefaultBoardToOnlinePlayers);
+        }
     }
 
     @Override
@@ -107,32 +99,56 @@ public class ScoreboardPlugin extends JavaPlugin {
         }
     }
 
-    public void reload() {
+    public boolean reload(@NotNull Consumer<Throwable> exceptionConsumer) {
         displayManager.hideAllBoards();
 
+        if (this.reloadSettings(exceptionConsumer)) {
+            PlatformHelper.runAsync(this::showDefaultBoardToOnlinePlayers);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean reloadSettings(@NotNull Consumer<Throwable> exceptionConsumer) {
         try {
-            translationDirectory.load();
+            this.loadConfig();
         } catch (IOException e) {
-            getLogger().log(Level.SEVERE, "Could not load languages", e);
+            getLogger().log(Level.SEVERE, "Could not load config.yml", e);
+            exceptionConsumer.accept(e);
+            return false;
         }
 
-        loadConfig();
-        boardManager.reload();
+        try {
+            this.loadMessages();
+        } catch (IOException e) {
+            getLogger().log(Level.SEVERE, "Could not load languages", e);
+            exceptionConsumer.accept(e);
+            return false;
+        }
 
-        PlatformHelper.runAsync(this::showDefaultBoardToOnlinePlayers);
+        try {
+            this.boardManager.reload();
+        } catch (IOException e) {
+            getLogger().log(Level.SEVERE, "Could not load boards", e);
+            exceptionConsumer.accept(e);
+            return false;
+        }
+
+        return true;
+    }
+
+    public @NotNull MiniMessageLocalization getLocalization() {
+        return this.localization;
     }
 
     @NotNull
     public BoardManager getBoardManager() {
-        if (boardManager == null) {
-            throw new IllegalStateException();
-        }
-
         return boardManager;
     }
 
     public DisplayManager getDisplayManager() {
-        if (boardManager == null) {
+        if (displayManager == null) {
             throw new IllegalStateException();
         }
 
@@ -143,31 +159,48 @@ public class ScoreboardPlugin extends JavaPlugin {
         getLogger().info("PlaceholderAPI is available!");
     }
 
-    private void saveDefaultFiles() throws IOException {
-        ResourceUtils.copyFromJarIfNotExists(
-                getFile().toPath(), "config.yml", getDataFolder().toPath().resolve("config.yml")
-        );
-
-        ResourceUtils.copyFromJarIfNotExists(
-                getFile().toPath(), "default.yml", getDataFolder().toPath().resolve("default.yml")
-        );
-    }
-
-    private void loadConfig() {
-        try (var config = YamlConfiguration.create(getDataFolder().toPath().resolve("config.yml"))) {
-            config.load();
-            LineDisplay.globalLengthLimit = Math.max(config.getInteger("max-line-length", 32), 1);
-        } catch (IOException e) {
-            getLogger().log(Level.SEVERE, "Could not load config.yml", e);
+    public Path saveResource(String filename) throws IOException {
+        var filepath = this.getDataFolder().toPath().resolve(filename);
+        if (!Files.isRegularFile(filepath)) {
+            try (var input = this.getResource(filename)) {
+                if (input == null) {
+                    throw new IllegalStateException(filename + " was not found in the jar.");
+                }
+                Files.copy(input, filepath);
+            }
         }
+        return filepath;
     }
 
-    private void saveDefaultLanguages(@NotNull Path directory) throws IOException {
-        var english = "en.yml";
-        ResourceUtils.copyFromJarIfNotExists(getFile().toPath(), english, directory.resolve(english));
+    private void loadConfig() throws IOException {
+        var config = YamlFormat.DEFAULT.load(this.saveResource("config.yml"));
+        LineDisplay.globalLengthLimit = Math.max(config.getInteger("max-line-length", 32), 1);
+    }
 
-        var japanese = "ja_JP.yml";
-        ResourceUtils.copyFromJarIfNotExists(getFile().toPath(), japanese, directory.resolve(japanese));
+    private void loadMessages() throws IOException {
+        if (this.localization == null) { // on startup
+            this.localization = new MiniMessageLocalization(MiniMessageSource.create(StringMessageMap.create(Messages.defaultMessages())), Messages::getLocaleFrom);
+        } else { // on reload
+            this.localization.clearSources();
+        }
+
+        DirectorySource.forStringMessageMap(this.getDataFolder().toPath().resolve("languages"))
+                .fileExtension(PropertiesFile.FILE_EXTENSION)
+                .defaultLocale(Locale.ENGLISH, Locale.JAPANESE)
+                .messageLoader(PropertiesFile.DEFAULT_LOADER)
+                .messageProcessor(MessageProcessors.appendMissingStringMessages(this::loadDefaultMessageMap, PropertiesFile.DEFAULT_APPENDER))
+                .messageProcessor(loaded -> MiniMessageSource.create(loaded.messageSource()))
+                .load(loaded -> this.localization.addSource(loaded.locale(), loaded.messageSource()));
+    }
+
+    private @Nullable Map<String, String> loadDefaultMessageMap(@NotNull Locale locale) throws IOException {
+        if (locale.equals(Locale.ENGLISH)) {
+            return Messages.defaultMessages();
+        } else {
+            try (var input = this.getResource(locale + ".properties")) {
+                return input != null ? PropertiesFile.load(input) : null;
+            }
+        }
     }
 
     private void showDefaultBoardToOnlinePlayers() {

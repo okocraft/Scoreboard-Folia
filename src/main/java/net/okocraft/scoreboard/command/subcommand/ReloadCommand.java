@@ -1,13 +1,12 @@
 package net.okocraft.scoreboard.command.subcommand;
 
+import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.kyori.adventure.text.Component;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.command.AbstractCommand;
-import net.okocraft.scoreboard.message.CommandMessage;
+import net.okocraft.scoreboard.message.Messages;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.logging.Level;
 
 public class ReloadCommand extends AbstractCommand {
 
@@ -19,22 +18,14 @@ public class ReloadCommand extends AbstractCommand {
     }
 
     @Override
-    public @NotNull Component getHelp() {
-        return CommandMessage.RELOAD_HELP;
+    public @NotNull Component getHelp(@NotNull MiniMessageSource msgSrc) {
+        return Messages.RELOAD_HELP.create(msgSrc);
     }
 
     @Override
-    public void onCommand(@NotNull CommandSender sender, @NotNull String[] args) {
-        try {
-            plugin.reload();
-            sender.sendMessage(CommandMessage.RELOAD_FINISH);
-        } catch (Throwable t) {
-            sender.sendMessage(CommandMessage.RELOAD_ERROR.apply(t));
-            plugin.getLogger().log(
-                    Level.SEVERE,
-                    "Could not complete reloading.",
-                    t
-            );
+    public void onCommand(@NotNull CommandSender sender, @NotNull String[] args, @NotNull MiniMessageSource msgSrc) {
+        if (plugin.reload(ex -> Messages.RELOAD_ERROR.apply(ex).source(msgSrc).send(sender))) {
+            Messages.RELOAD_FINISH.source(msgSrc).send(sender);
         }
     }
 }

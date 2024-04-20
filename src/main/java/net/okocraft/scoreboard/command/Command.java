@@ -1,5 +1,6 @@
 package net.okocraft.scoreboard.command;
 
+import com.github.siroshun09.messages.minimessage.source.MiniMessageSource;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -39,7 +40,7 @@ public interface Command {
      *
      * @return the helps
      */
-    @NotNull Component getHelp();
+    @NotNull Component getHelp(@NotNull MiniMessageSource msgSrc);
 
     /**
      * Executes the command.
@@ -50,7 +51,7 @@ public interface Command {
      * @param sender the executor
      * @param args   the array of arguments
      */
-    void onCommand(@NotNull CommandSender sender, @NotNull String[] args);
+    void onCommand(@NotNull CommandSender sender, @NotNull String[] args, @NotNull MiniMessageSource msgSrc);
 
     /**
      * Gets the tab-completion.
