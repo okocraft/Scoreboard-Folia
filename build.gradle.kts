@@ -59,6 +59,6 @@ tasks {
 
     shadowJar {
         minimize()
-        relocate("com.github.siroshun09", "$group.libs")
+        relocate("com.github.siroshun09", "${project.group}.libs")
     }
 }
