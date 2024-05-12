@@ -162,6 +162,7 @@ public class ScoreboardPlugin extends JavaPlugin {
     public Path saveResource(String filename) throws IOException {
         var filepath = this.getDataFolder().toPath().resolve(filename);
         if (!Files.isRegularFile(filepath)) {
+            Files.createDirectories(this.getDataFolder().toPath());
             try (var input = this.getResource(filename)) {
                 if (input == null) {
                     throw new IllegalStateException(filename + " was not found in the jar.");
