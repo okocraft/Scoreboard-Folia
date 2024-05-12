@@ -7,7 +7,7 @@ plugins {
 group = "net.okocraft.scoreboard"
 version = "5.0-SNAPSHOT"
 
-val mcVersion = "1.20.4"
+val mcVersion = "1.20.6"
 val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {
@@ -28,25 +28,20 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
-tasks {
-    reobfJar {
-        outputJar.set(
-            project.layout.buildDirectory
-                .file("libs/Scoreboard-${fullVersion}.jar")
-        )
-    }
+paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 
+tasks {
     build {
-        dependsOn(reobfJar)
+        dependsOn(shadowJar)
     }
 
     compileJava {
         options.encoding = Charsets.UTF_8.name()
-        options.release.set(17)
+        options.release.set(21)
     }
 
     processResources {
@@ -60,5 +55,6 @@ tasks {
     shadowJar {
         minimize()
         relocate("com.github.siroshun09", "${project.group}.libs")
+        archiveFileName = "Scoreboard-${fullVersion}.jar"
     }
 }

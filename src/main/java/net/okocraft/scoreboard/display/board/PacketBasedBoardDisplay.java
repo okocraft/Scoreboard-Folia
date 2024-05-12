@@ -1,23 +1,26 @@
 package net.okocraft.scoreboard.display.board;
 
 import io.netty.buffer.Unpooled;
+import io.papermc.paper.adventure.AdventureCodecs;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import io.papermc.paper.util.Tick;
 import net.kyori.adventure.text.Component;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.numbers.BlankFormat;
+import net.minecraft.network.chat.numbers.NumberFormat;
 import net.minecraft.network.chat.numbers.NumberFormatTypes;
 import net.minecraft.network.protocol.game.ClientboundSetDisplayObjectivePacket;
 import net.minecraft.network.protocol.game.ClientboundSetObjectivePacket;
 import net.minecraft.network.protocol.game.ClientboundSetScorePacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
 import net.okocraft.scoreboard.display.line.LineDisplay;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,11 +28,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class PacketBasedBoardDisplay implements BoardDisplay {
 
     private static final String OBJECTIVE_NAME = "sb";
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private static final Optional<NumberFormat> BLANK = Optional.of(BlankFormat.INSTANCE);
+    private static final ClientboundSetObjectivePacket HIDE_PACKET;
+    
+    static {
+        var buf = newByteBuf();
+
+        // ClientboundSetObjectivePacket(RegistryFriendlyByteBuf)
+        buf.writeUtf(OBJECTIVE_NAME); // objective name
+        buf.writeByte(ClientboundSetObjectivePacket.METHOD_REMOVE); // method
+        
+        HIDE_PACKET = ClientboundSetObjectivePacket.STREAM_CODEC.decode(buf);
+    }
 
     private final List<ScheduledTask> updateTasks = new ArrayList<>(17);
 
@@ -87,16 +104,9 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
     }
 
     private void sendShowPackets() {
-        var buf = new FriendlyByteBuf(Unpooled.buffer());
+        var buf = newByteBuf();
 
-        // ClientboundSetObjectivePacket(FriendlyByteBuf)
-        buf.writeUtf(OBJECTIVE_NAME); // objective name
-        buf.writeByte(ClientboundSetObjectivePacket.METHOD_ADD); // method
-        buf.writeComponent(title.getCurrentLine()); // display name
-        buf.writeEnum(ObjectiveCriteria.RenderType.INTEGER); // render type
-        buf.writeNullable(BlankFormat.INSTANCE, NumberFormatTypes::writeToStream); // number format
-
-        player.getHandle().connection.send(new ClientboundSetObjectivePacket(buf));
+        updateTitlePacket(buf, ClientboundSetObjectivePacket.METHOD_ADD);
 
         var setScorePackets = new ArrayList<ClientboundSetScorePacket>(this.lines.size());
 
@@ -107,12 +117,23 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
         buf.clear();
 
-        // ClientboundSetDisplayObjectivePacket(FriendlyByteBuf)
+        // ClientboundSetDisplayObjectivePacket(RegistryFriendlyByteBuf)
         buf.writeByte(DisplaySlot.SIDEBAR.id());
         buf.writeUtf(OBJECTIVE_NAME);
-        player.getHandle().connection.send(new ClientboundSetDisplayObjectivePacket(buf));
+        player.getHandle().connection.send(ClientboundSetDisplayObjectivePacket.STREAM_CODEC.decode(buf));
 
         setScorePackets.forEach(player.getHandle().connection::send);
+    }
+
+    private void updateTitlePacket(RegistryFriendlyByteBuf buf, int method) {
+        // ClientboundSetObjectivePacket(RegistryFriendlyByteBuf)
+        buf.writeUtf(OBJECTIVE_NAME);
+        buf.writeByte(method);
+        AdventureCodecs.STREAM_COMPONENT_CODEC.encode(buf, title.getCurrentLine()); // display name
+        buf.writeEnum(ObjectiveCriteria.RenderType.INTEGER); // render type
+        NumberFormatTypes.OPTIONAL_STREAM_CODEC.encode(buf, BLANK); // number format
+
+        player.getHandle().connection.send(ClientboundSetObjectivePacket.STREAM_CODEC.decode(buf));
     }
 
     @NotNull
@@ -121,8 +142,8 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
                 name,
                 OBJECTIVE_NAME,
                 score,
-                component != null ? PaperAdventure.asVanilla(component) : null,
-                null
+                Optional.ofNullable(component).map(PaperAdventure::asVanilla),
+                Optional.empty()
         );
     }
 
@@ -138,31 +159,14 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
     }
 
     private void sendHidePacket() {
-        var buf = new FriendlyByteBuf(Unpooled.buffer());
-
-        // ClientboundSetObjectivePacket(FriendlyByteBuf)
-        buf.writeUtf(OBJECTIVE_NAME); // objective name
-        buf.writeByte(ClientboundSetObjectivePacket.METHOD_REMOVE); // method
-
-        player.getHandle().connection.send(new ClientboundSetObjectivePacket(buf));
+        player.getHandle().connection.send(HIDE_PACKET);
     }
 
     @Override
     public void applyTitle() {
-        if (!title.isChanged()) {
-            return;
+        if (title.isChanged()) {
+            updateTitlePacket(newByteBuf(), ClientboundSetObjectivePacket.METHOD_CHANGE);
         }
-
-        var buf = new FriendlyByteBuf(Unpooled.buffer());
-
-        // ClientboundSetObjectivePacket(FriendlyByteBuf)
-        buf.writeUtf(OBJECTIVE_NAME); // objective name
-        buf.writeByte(ClientboundSetObjectivePacket.METHOD_CHANGE); // method
-        buf.writeComponent(title.getCurrentLine()); // display name
-        buf.writeEnum(ObjectiveCriteria.RenderType.INTEGER); // render type
-        buf.writeNullable(BlankFormat.INSTANCE, NumberFormatTypes::writeToStream); // number format
-
-        player.getHandle().connection.send(new ClientboundSetObjectivePacket(buf));
     }
 
     @Override
@@ -207,5 +211,9 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
         } else {
             this.applyLine(display);
         }
+    }
+
+    private static RegistryFriendlyByteBuf newByteBuf() {
+        return new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
     }
 }
