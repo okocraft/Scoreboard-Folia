@@ -11,6 +11,7 @@ val mcVersion = "1.20.6"
 val fullVersion = "${version}-mc${mcVersion}"
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven {
         url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/")

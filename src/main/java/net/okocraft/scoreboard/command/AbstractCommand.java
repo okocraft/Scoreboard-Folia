@@ -39,15 +39,15 @@ public abstract class AbstractCommand implements Command {
     }
 
     public @NotNull String getName() {
-        return name;
+        return this.name;
     }
 
     public @NotNull String getPermissionNode() {
-        return permissionNode;
+        return this.permissionNode;
     }
 
     public @NotNull @Unmodifiable Set<String> getAliases() {
-        return aliases;
+        return this.aliases;
     }
 
     public @NotNull List<String> onTabComplete(@NotNull CommandSender sender, @NotNull String[] args) {

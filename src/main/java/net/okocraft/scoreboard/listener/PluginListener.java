@@ -19,7 +19,7 @@ public class PluginListener implements Listener {
     }
 
     public void register() {
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
     }
 
     public void unregister() {
@@ -30,7 +30,7 @@ public class PluginListener implements Listener {
     public void onEnable(@NotNull PluginEnableEvent event) {
         if (event.getPlugin().getName().equals("PlaceholderAPI")) {
             PlaceholderAPIHooker.setEnabled(true);
-            plugin.printPlaceholderIsAvailable();
+            this.plugin.printPlaceholderIsAvailable();
         }
     }
 

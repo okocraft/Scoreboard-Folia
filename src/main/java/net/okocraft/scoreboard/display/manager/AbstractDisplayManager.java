@@ -21,25 +21,25 @@ public abstract class AbstractDisplayManager implements DisplayManager {
 
     @Override
     public void showBoard(@NotNull Player player, @NotNull Board board) {
-        hideBoard(player);
+        this.hideBoard(player);
 
-        var display = newDisplay(player, board);
+        var display = this.newDisplay(player, board);
 
         if (!display.isVisible()) {
             display.showBoard();
         }
 
-        displayMap.put(player.getUniqueId(), display);
+        this.displayMap.put(player.getUniqueId(), display);
     }
 
     @Override
     public void showDefaultBoard(@NotNull Player player) {
-        showBoard(player, boardManager.getDefaultBoard());
+        this.showBoard(player, this.boardManager.getDefaultBoard());
     }
 
     @Override
     public void hideBoard(@NotNull Player player) {
-        var display = displayMap.remove(player.getUniqueId());
+        var display = this.displayMap.remove(player.getUniqueId());
 
         if (display != null && display.isVisible()) {
             display.hideBoard();
@@ -48,13 +48,13 @@ public abstract class AbstractDisplayManager implements DisplayManager {
 
     @Override
     public void hideAllBoards() {
-        displayMap.values().stream().filter(BoardDisplay::isVisible).forEach(BoardDisplay::hideBoard);
-        displayMap.clear();
+        this.displayMap.values().stream().filter(BoardDisplay::isVisible).forEach(BoardDisplay::hideBoard);
+        this.displayMap.clear();
     }
 
     @Override
     public boolean isDisplayed(@NotNull Player player) {
-        return displayMap.containsKey(player.getUniqueId());
+        return this.displayMap.containsKey(player.getUniqueId());
     }
 
     protected abstract @NotNull BoardDisplay newDisplay(@NotNull Player player, @NotNull Board board);

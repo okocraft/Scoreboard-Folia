@@ -5,28 +5,28 @@ import io.papermc.paper.chunk.system.scheduling.ChunkFullTask;
 import io.papermc.paper.threadedregions.ThreadedRegionizer;
 import io.papermc.paper.threadedregions.TickData;
 import io.papermc.paper.threadedregions.TickRegions;
-import net.okocraft.scoreboard.ScoreboardPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.TextColor;
+import net.okocraft.scoreboard.display.placeholder.Placeholder;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 
 public final class PlatformHelper {
 
     private static final boolean FOLIA;
-    private static final boolean ASYNC_SCHEDULER;
     private static final VarHandle FOLIA_REGIONIZER_REGIONS_BY_ID;
+
+    private static final TextColor MSPT_WARN_ORANGE_COLOR = TextColor.color(0xff4b00);
+    private static final TextColor MSPT_WARN_RED_COLOR = TextColor.color(0xf6aa00);
 
     static {
         boolean isFolia;
@@ -39,21 +39,6 @@ public final class PlatformHelper {
         }
 
         FOLIA = isFolia;
-
-        boolean asyncScheduler;
-
-        if (FOLIA) {
-            asyncScheduler = true;
-        } else {
-            try {
-                Bukkit.class.getDeclaredMethod("getAsyncScheduler");
-                asyncScheduler = true;
-            } catch (NoSuchMethodException e) {
-                asyncScheduler = false;
-            }
-        }
-
-        ASYNC_SCHEDULER = asyncScheduler;
 
         if (FOLIA) {
             VarHandle regionsById;
@@ -73,45 +58,13 @@ public final class PlatformHelper {
         return FOLIA;
     }
 
-    public static void runAsync(@NotNull Runnable runnable) {
-        if (ASYNC_SCHEDULER) {
-            Bukkit.getAsyncScheduler().runNow(ScoreboardPlugin.getPlugin(), $ -> runnable.run());
-        } else {
-            Bukkit.getScheduler().runTaskAsynchronously(ScoreboardPlugin.getPlugin(), $ -> runnable.run());
-        }
-    }
-
-    public static <T> @NotNull CompletableFuture<T> runOnPlayerScheduler(@NotNull Player player, @NotNull Supplier<T> supplier) {
-        if (ASYNC_SCHEDULER) {
-            if (Bukkit.isOwnedByCurrentRegion(player)) {
-                return CompletableFuture.completedFuture(supplier.get());
-            } else {
-                return CompletableFuture.supplyAsync(supplier, createExecutorFromPlayerScheduler(player));
-            }
-        } else {
-            if (Bukkit.isPrimaryThread()) {
-                return CompletableFuture.completedFuture(supplier.get());
-            } else {
-                return CompletableFuture.supplyAsync(supplier, Bukkit.getScheduler().getMainThreadExecutor(ScoreboardPlugin.getPlugin()));
-            }
-        }
-    }
-
-    public static double getRegionTPS(@NotNull Location location) {
-        if (FOLIA) {
-            return getFromRegionReport(location, report -> report.tpsData().segmentAll().average());
-        } else {
-            return Bukkit.getTPS()[0];
-        }
-    }
-
-    public static double getFromRegionReport(@NotNull Location location, @NotNull ToDoubleFunction<TickData.TickReportData> function) {
-        var data = getTickReport(location);
+    public static double getFromRegionReport(@NotNull Placeholder.Context context, @NotNull ToDoubleFunction<TickData.TickReportData> function) {
+        var data = getTickReport(context);
         return data != null ? function.applyAsDouble(data) : 0.0;
     }
 
-    public static int getFromRegionStats(@NotNull Location location, @NotNull ToIntFunction<TickRegions.RegionStats> function) {
-        var stats = getRegionStats(location);
+    public static int getFromRegionStats(@NotNull Placeholder.Context context, @NotNull ToIntFunction<TickRegions.RegionStats> function) {
+        var stats = getRegionStats(context);
         return stats != null ? function.applyAsInt(stats) : 0;
     }
 
@@ -139,31 +92,32 @@ public final class PlatformHelper {
         return ChunkFullTask.genRate(System.nanoTime());
     }
 
-    private static @Nullable TickRegions.TickRegionData getRegionData(@NotNull Location location) {
-        if (!(location.getWorld() instanceof CraftWorld world)) {
-            return null;
+    public static @NotNull Component colorizeMSPT(@NotNull TextComponent.Builder builder, double value) {
+        if (value < 45) {
+            return builder.build();
+        } else if (55 < value) {
+            return builder.color(MSPT_WARN_RED_COLOR).build();
+        } else {
+            return builder.color(MSPT_WARN_ORANGE_COLOR).build();
         }
-
-        var region = world.getHandle().regioniser.getRegionAtSynchronised(location.getBlockX() >> 4, location.getBlockZ() >> 4);
-
-        if (region == null) {
-            return null;
-        }
-
-        return region.getData();
     }
 
-    private static @Nullable TickRegions.RegionStats getRegionStats(@NotNull Location location) {
-        var data = getRegionData(location);
+    private static @Nullable TickRegions.TickRegionData getRegionData(@NotNull Placeholder.Context context) {
+        if (!(context.world() instanceof CraftWorld world)) {
+            return null;
+        }
+
+        var region = world.getHandle().regioniser.getRegionAtSynchronised(context.blockX() >> 4, context.blockZ() >> 4);
+        return region != null ? region.getData() : null;
+    }
+
+    private static @Nullable TickRegions.RegionStats getRegionStats(@NotNull Placeholder.Context context) {
+        var data = getRegionData(context);
         return data != null ? data.getRegionStats() : null;
     }
 
-    private static @Nullable TickData.TickReportData getTickReport(@NotNull Location location) {
-        var data = getRegionData(location);
+    private static @Nullable TickData.TickReportData getTickReport(@NotNull Placeholder.Context context) {
+        var data = getRegionData(context);
         return data != null ? data.getRegionSchedulingHandle().getTickReport5s(System.nanoTime()) : null;
-    }
-
-    private static @NotNull Executor createExecutorFromPlayerScheduler(@NotNull Player player) {
-        return command -> player.getScheduler().run(ScoreboardPlugin.getPlugin(), $ -> command.run(), null);
     }
 }

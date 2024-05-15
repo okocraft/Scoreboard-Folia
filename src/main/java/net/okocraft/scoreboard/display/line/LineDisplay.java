@@ -2,12 +2,9 @@ package net.okocraft.scoreboard.display.line;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.okocraft.scoreboard.board.Line;
-import net.okocraft.scoreboard.display.placeholder.Placeholders;
-import net.okocraft.scoreboard.external.PlaceholderAPIHooker;
+import net.okocraft.scoreboard.board.line.Line;
+import net.okocraft.scoreboard.display.placeholder.Placeholder;
 import net.okocraft.scoreboard.util.LengthChecker;
-import net.okocraft.scoreboard.util.PlatformHelper;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,10 +28,10 @@ public class LineDisplay {
         this.num = num;
         this.name = String.valueOf(num);
 
-        if (line.isEmpty()) {
+        if (line.lines().isEmpty()) {
             this.currentLine = Component.empty();
         } else {
-            this.currentLine = processLine(0);
+            this.currentLine = this.processLine(0);
         }
     }
 
@@ -43,53 +40,42 @@ public class LineDisplay {
     }
 
     public @NotNull String getName() {
-        return name;
+        return this.name;
     }
 
     public @NotNull TextComponent getCurrentLine() {
-        return currentLine;
+        return this.currentLine;
     }
 
     public void update() {
-        currentIndex++;
-
-        if (line.getMaxIndex() < currentIndex) {
-            currentIndex = 0;
+        if (this.line.lines().size() <= ++this.currentIndex) {
+            this.currentIndex = 0;
         }
 
-        currentLine = processLine(currentIndex);
+        this.currentLine = this.processLine(this.currentIndex);
     }
 
     public boolean isChanged() {
-        if (currentLine.equals(prevLine)) {
+        if (this.currentLine.equals(this.prevLine)) {
             return false;
         } else {
-            prevLine = currentLine;
+            this.prevLine = this.currentLine;
             return true;
         }
     }
 
     public boolean shouldUpdate() {
-        return line.shouldUpdate();
+        return this.line.shouldUpdate();
     }
 
     public long getInterval() {
-        return line.getInterval();
+        return this.line.interval();
     }
 
     private @NotNull TextComponent processLine(int index) {
-        var replaceResult = Placeholders.replace(player, line.get(index)); // replace built-in placeholders
-        var processing = replaceResult.replaced();
-
-        if (PlaceholderAPIHooker.isEnabled() && replaceResult.hasUnknownPlaceholders()) {
-            processing = PlatformHelper.runOnPlayerScheduler(player, () -> PlaceholderAPIHooker.run(player, replaceResult.replaced())).join();
-        }
-
-        int lengthLimit = line.getLengthLimit();
-
         return LengthChecker.check(
-                LegacyComponentSerializer.legacyAmpersand().deserialize(processing),
-                lengthLimit < 0 ? globalLengthLimit : lengthLimit
+                this.line.lines().get(index).render(new Placeholder.Context(this.player)),
+                this.line.lengthLimit(globalLengthLimit)
         );
     }
 }

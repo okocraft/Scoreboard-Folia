@@ -36,7 +36,7 @@ public class SubCommandHolder {
      * @return the set of subcommands
      */
     public @NotNull @Unmodifiable List<Command> getSubCommands() {
-        return subCommands;
+        return this.subCommands;
     }
 
     /**
@@ -45,7 +45,7 @@ public class SubCommandHolder {
      * @param subCommand the new subcommand
      */
     public void register(@NotNull Command subCommand) {
-        subCommands.add(subCommand);
+        this.subCommands.add(subCommand);
     }
 
     /**
@@ -54,7 +54,7 @@ public class SubCommandHolder {
      * @param subCommand the subcommand to unregister
      */
     public void unregister(@NotNull Command subCommand) {
-        subCommands.remove(subCommand);
+        this.subCommands.remove(subCommand);
     }
 
     /**
@@ -66,7 +66,7 @@ public class SubCommandHolder {
     public @NotNull Optional<Command> search(@NotNull String name) {
         name = Objects.requireNonNull(name).toLowerCase(Locale.ROOT);
 
-        for (var subCommand : subCommands) {
+        for (var subCommand : this.subCommands) {
             if (subCommand.getName().equals(name) || subCommand.getAliases().contains(name)) {
                 return Optional.of(subCommand);
             }

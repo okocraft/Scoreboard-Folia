@@ -30,7 +30,7 @@ public final class Messages {
     private static final Placeholder<String> NAME = Placeholder.component("name", Component::text);
     private static final Placeholder<String> COMMANDLINE_PLACEHOLDER = messageBase("commandline", MiniMessageBase::messageKey);
     private static final Placeholder<String> HELP_PLACEHOLDER = messageBase("help", MiniMessageBase::messageKey);
-    private static final Placeholder<Board> BOARD = Placeholder.component("board", board -> Component.text(board.getName()));
+    private static final Placeholder<Board> BOARD = Placeholder.component("board", board -> Component.text(board.name()));
     private static final Placeholder<Player> PLAYER = Placeholder.component("board", player -> Component.text().content(player.getName()).hoverEvent(player).build());
     private static final Placeholder<Throwable> ERROR = Placeholder.component("error", ex -> Component.text(ex.getMessage()));
 

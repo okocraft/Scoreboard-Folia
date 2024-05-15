@@ -57,8 +57,8 @@ public class HideCommand extends AbstractCommand {
             }
         }
 
-        if (displayManager.isDisplayed(target)) {
-            displayManager.hideBoard(target);
+        if (this.displayManager.isDisplayed(target)) {
+            this.displayManager.hideBoard(target);
         } else {
             Messages.HIDE_ALREADY.source(msgSrc).send(sender);
             return;
@@ -73,7 +73,7 @@ public class HideCommand extends AbstractCommand {
 
     @Override
     public @NotNull List<String> onTabComplete(@NotNull CommandSender sender, @NotNull String[] args) {
-        if (!sender.hasPermission(getPermissionNode())) {
+        if (!sender.hasPermission(this.getPermissionNode())) {
             return Collections.emptyList();
         }
 

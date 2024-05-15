@@ -64,13 +64,13 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
             throw new IllegalArgumentException(player + " is not CraftPlayer");
         }
 
-        this.title = new LineDisplay(player, board.getTitle(), 0);
+        this.title = new LineDisplay(player, board.title(), 0);
 
-        int size = Math.min(board.getLines().size(), 16);
+        int size = Math.min(board.lines().size(), 16);
         var lines = new ArrayList<LineDisplay>(size);
 
         for (int i = 0; i < size; i++) {
-            LineDisplay line = new LineDisplay(player, board.getLines().get(i), i);
+            LineDisplay line = new LineDisplay(player, board.lines().get(i), i);
             lines.add(line);
         }
 
@@ -79,26 +79,26 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
     @Override
     public @NotNull LineDisplay getTitle() {
-        return title;
+        return this.title;
     }
 
     @Override
     public @NotNull List<LineDisplay> getLines() {
-        return lines;
+        return this.lines;
     }
 
     @Override
     public boolean isVisible() {
-        return visible;
+        return this.visible;
     }
 
     @Override
     public void showBoard() {
-        synchronized (lock) {
-            if (!visible) {
-                sendShowPackets();
-                scheduleUpdateTasks();
-                visible = true;
+        synchronized (this.lock) {
+            if (!this.visible) {
+                this.sendShowPackets();
+                this.scheduleUpdateTasks();
+                this.visible = true;
             }
         }
     }
@@ -106,12 +106,12 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
     private void sendShowPackets() {
         var buf = newByteBuf();
 
-        updateTitlePacket(buf, ClientboundSetObjectivePacket.METHOD_ADD);
+        this.updateTitlePacket(buf, ClientboundSetObjectivePacket.METHOD_ADD);
 
         var setScorePackets = new ArrayList<ClientboundSetScorePacket>(this.lines.size());
 
-        for (int i = 0, lineSize = lines.size(); i < lineSize; i++) {
-            var line = lines.get(i);
+        for (int i = 0, lineSize = this.lines.size(); i < lineSize; i++) {
+            var line = this.lines.get(i);
             setScorePackets.add(createSetScorePacket(line.getName(), lineSize - i, line.getCurrentLine()));
         }
 
@@ -120,20 +120,20 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
         // ClientboundSetDisplayObjectivePacket(RegistryFriendlyByteBuf)
         buf.writeByte(DisplaySlot.SIDEBAR.id());
         buf.writeUtf(OBJECTIVE_NAME);
-        player.getHandle().connection.send(ClientboundSetDisplayObjectivePacket.STREAM_CODEC.decode(buf));
+        this.player.getHandle().connection.send(ClientboundSetDisplayObjectivePacket.STREAM_CODEC.decode(buf));
 
-        setScorePackets.forEach(player.getHandle().connection::send);
+        setScorePackets.forEach(this.player.getHandle().connection::send);
     }
 
     private void updateTitlePacket(RegistryFriendlyByteBuf buf, int method) {
         // ClientboundSetObjectivePacket(RegistryFriendlyByteBuf)
         buf.writeUtf(OBJECTIVE_NAME);
         buf.writeByte(method);
-        AdventureCodecs.STREAM_COMPONENT_CODEC.encode(buf, title.getCurrentLine()); // display name
+        AdventureCodecs.STREAM_COMPONENT_CODEC.encode(buf, this.title.getCurrentLine()); // display name
         buf.writeEnum(ObjectiveCriteria.RenderType.INTEGER); // render type
         NumberFormatTypes.OPTIONAL_STREAM_CODEC.encode(buf, BLANK); // number format
 
-        player.getHandle().connection.send(ClientboundSetObjectivePacket.STREAM_CODEC.decode(buf));
+        this.player.getHandle().connection.send(ClientboundSetObjectivePacket.STREAM_CODEC.decode(buf));
     }
 
     @NotNull
@@ -149,23 +149,23 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
     @Override
     public void hideBoard() {
-        synchronized (lock) {
-            if (visible) {
-                sendHidePacket();
-                cancelUpdateTasks();
-                visible = false;
+        synchronized (this.lock) {
+            if (this.visible) {
+                this.sendHidePacket();
+                this.cancelUpdateTasks();
+                this.visible = false;
             }
         }
     }
 
     private void sendHidePacket() {
-        player.getHandle().connection.send(HIDE_PACKET);
+        this.player.getHandle().connection.send(HIDE_PACKET);
     }
 
     @Override
     public void applyTitle() {
-        if (title.isChanged()) {
-            updateTitlePacket(newByteBuf(), ClientboundSetObjectivePacket.METHOD_CHANGE);
+        if (this.title.isChanged()) {
+            this.updateTitlePacket(newByteBuf(), ClientboundSetObjectivePacket.METHOD_CHANGE);
         }
     }
 
@@ -174,33 +174,33 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
         if (!line.isChanged()) {
             return;
         }
-        player.getHandle().connection.send(createSetScorePacket(line.getName(), lines.size() - line.getLineNumber(), line.getCurrentLine()));
+        this.player.getHandle().connection.send(createSetScorePacket(line.getName(), this.lines.size() - line.getLineNumber(), line.getCurrentLine()));
     }
 
     private void scheduleUpdateTasks() {
-        if (getTitle().shouldUpdate()) {
-            updateTasks.add(scheduleUpdateTask(getTitle(), true, getTitle().getInterval()));
+        if (this.getTitle().shouldUpdate()) {
+            this.updateTasks.add(this.scheduleUpdateTask(this.getTitle(), true, this.getTitle().getInterval()));
         }
 
-        for (LineDisplay line : getLines()) {
+        for (LineDisplay line : this.getLines()) {
             if (line.shouldUpdate()) {
-                updateTasks.add(scheduleUpdateTask(line, false, line.getInterval()));
+                this.updateTasks.add(this.scheduleUpdateTask(line, false, line.getInterval()));
             }
         }
     }
 
     private void cancelUpdateTasks() {
-        updateTasks.stream().filter(Objects::nonNull).filter(t -> !t.isCancelled()).forEach(ScheduledTask::cancel);
-        updateTasks.clear();
+        this.updateTasks.stream().filter(Objects::nonNull).filter(t -> !t.isCancelled()).forEach(ScheduledTask::cancel);
+        this.updateTasks.clear();
     }
 
     private ScheduledTask scheduleUpdateTask(@NotNull LineDisplay display, boolean isTitleLine, long interval) {
         var duration = Tick.of(interval);
-        return Bukkit.getAsyncScheduler().runAtFixedRate(ScoreboardPlugin.getPlugin(), $ -> update(display, isTitleLine), duration.toMillis(), duration.toMillis(), TimeUnit.MILLISECONDS);
+        return Bukkit.getAsyncScheduler().runAtFixedRate(ScoreboardPlugin.getPlugin(), $ -> this.update(display, isTitleLine), duration.toMillis(), duration.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     private void update(@NotNull LineDisplay display, boolean isTitleLine) {
-        if (!visible) {
+        if (!this.visible) {
             return;
         }
 

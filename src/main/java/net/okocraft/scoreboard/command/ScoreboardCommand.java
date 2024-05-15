@@ -30,7 +30,7 @@ public class ScoreboardCommand implements CommandExecutor, TabCompleter {
 
     public ScoreboardCommand(@NotNull ScoreboardPlugin plugin) {
         this.localization = plugin.getLocalization();
-        subCommandHolder = new SubCommandHolder(
+        this.subCommandHolder = new SubCommandHolder(
                 new ShowCommand(plugin.getBoardManager(), plugin.getDisplayManager()),
                 new HideCommand(plugin.getDisplayManager()),
                 new ReloadCommand(plugin)
@@ -48,14 +48,14 @@ public class ScoreboardCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            sendHelp(sender, msgSrc);
+            this.sendHelp(sender, msgSrc);
             return true;
         }
 
-        var optionalSubCommand = subCommandHolder.search(args[0]);
+        var optionalSubCommand = this.subCommandHolder.search(args[0]);
 
         if (optionalSubCommand.isEmpty()) {
-            sendHelp(sender, msgSrc);
+            this.sendHelp(sender, msgSrc);
             return true;
         }
 
@@ -80,14 +80,14 @@ public class ScoreboardCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            return subCommandHolder.getSubCommands().stream()
+            return this.subCommandHolder.getSubCommands().stream()
                     .filter(cmd -> sender.hasPermission(cmd.getPermissionNode()))
                     .map(net.okocraft.scoreboard.command.Command::getName)
                     .filter(cmdName -> cmdName.startsWith(args[0].toLowerCase(Locale.ROOT)))
                     .toList();
         }
 
-        return subCommandHolder.search(args[0])
+        return this.subCommandHolder.search(args[0])
                 .filter(cmd -> sender.hasPermission(cmd.getPermissionNode()))
                 .map(cmd -> cmd.onTabComplete(sender, args))
                 .orElse(Collections.emptyList());
@@ -97,7 +97,7 @@ public class ScoreboardCommand implements CommandExecutor, TabCompleter {
         Messages.COMMAND_HELP_HEADER.source(msgSrc).send(sender);
         sender.sendMessage(Component.join(
                 JoinConfiguration.newlines(),
-                ((Iterable<Component>) subCommandHolder.getSubCommands().stream().map(cmd -> cmd.getHelp(msgSrc))::iterator)
+                ((Iterable<Component>) this.subCommandHolder.getSubCommands().stream().map(cmd -> cmd.getHelp(msgSrc))::iterator)
         ));
     }
 }

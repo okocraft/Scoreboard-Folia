@@ -42,19 +42,19 @@ public class ShowCommand extends AbstractCommand {
         Board board;
 
         if (1 < args.length) {
-            board = searchForBoard(args[1]);
+            board = this.searchForBoard(args[1]);
 
             if (board == null) {
                 Messages.BOARD_NOT_FOUND.apply(args[1]).source(msgSrc).send(sender);
                 return;
             }
 
-            if (!args[0].equalsIgnoreCase("default") && !sender.hasPermission(board.getPermissionNode())) {
-                Messages.NO_PERMISSION.apply(board.getPermissionNode()).source(msgSrc).send(sender);
+            if (!args[0].equalsIgnoreCase("default") && !sender.hasPermission(board.permissionNode())) {
+                Messages.NO_PERMISSION.apply(board.permissionNode()).source(msgSrc).send(sender);
                 return;
             }
         } else {
-            board = boardManager.getDefaultBoard();
+            board = this.boardManager.getDefaultBoard();
         }
 
         Player target;
@@ -80,7 +80,7 @@ public class ShowCommand extends AbstractCommand {
             }
         }
 
-        displayManager.showBoard(target, board);
+        this.displayManager.showBoard(target, board);
 
         if (sender.equals(target)) {
             Messages.SHOW_SELF.apply(board).source(msgSrc).send(sender);
@@ -91,7 +91,7 @@ public class ShowCommand extends AbstractCommand {
 
     @Override
     public @NotNull List<String> onTabComplete(@NotNull CommandSender sender, @NotNull String[] args) {
-        if (!sender.hasPermission(getPermissionNode())) {
+        if (!sender.hasPermission(this.getPermissionNode())) {
             return Collections.emptyList();
         }
 
@@ -103,9 +103,9 @@ public class ShowCommand extends AbstractCommand {
                 result.add("default");
             }
 
-            boardManager.getCustomBoards().stream()
-                    .filter(board -> sender.hasPermission(board.getPermissionNode()))
-                    .map(Board::getName)
+            this.boardManager.getCustomBoards().stream()
+                    .filter(board -> sender.hasPermission(board.permissionNode()))
+                    .map(Board::name)
                     .filter(name -> name.startsWith(filter))
                     .forEach(result::add);
             return result;
@@ -124,10 +124,10 @@ public class ShowCommand extends AbstractCommand {
 
     private @Nullable Board searchForBoard(@NotNull String name) {
         if (name.equalsIgnoreCase("default")) {
-            return boardManager.getDefaultBoard();
+            return this.boardManager.getDefaultBoard();
         } else {
-            return boardManager.getCustomBoards().stream()
-                    .filter(b -> b.getName().equals(name))
+            return this.boardManager.getCustomBoards().stream()
+                    .filter(b -> b.name().equals(name))
                     .findFirst().orElse(null);
         }
     }

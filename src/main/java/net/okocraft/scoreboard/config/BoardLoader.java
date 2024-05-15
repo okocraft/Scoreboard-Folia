@@ -2,9 +2,11 @@ package net.okocraft.scoreboard.config;
 
 import com.github.siroshun09.configapi.core.node.MapNode;
 import com.github.siroshun09.configapi.format.yaml.YamlFormat;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.okocraft.scoreboard.ScoreboardPlugin;
 import net.okocraft.scoreboard.board.Board;
-import net.okocraft.scoreboard.board.Line;
+import net.okocraft.scoreboard.board.line.Line;
+import net.okocraft.scoreboard.board.line.LineFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -33,7 +35,7 @@ final class BoardLoader {
 
     static @NotNull Board loadDefaultBoard(@NotNull ScoreboardPlugin plugin) throws IOException {
         var filepath = plugin.saveResource("default.yml");
-        return createBoardFromNode(getBoardName(filepath), YamlFormat.DEFAULT.load(filepath));
+        return createBoardFromNode(plugin.getLineCompiler(), getBoardName(filepath), YamlFormat.DEFAULT.load(filepath));
     }
 
     static @NotNull @Unmodifiable List<Board> loadCustomBoards(@NotNull ScoreboardPlugin plugin) {
@@ -56,7 +58,7 @@ final class BoardLoader {
                     .filter(p -> checkFilename(p.getFileName().toString()))
                     .map(filepath -> {
                         try {
-                            return createBoardFromNode(getBoardName(filepath), YamlFormat.DEFAULT.load(filepath));
+                            return createBoardFromNode(plugin.getLineCompiler(), getBoardName(filepath), YamlFormat.DEFAULT.load(filepath));
                         } catch (IOException e) {
                             plugin.getLogger().log(Level.SEVERE, "Could not load " + filepath.getFileName(), e);
                             return null;
@@ -70,8 +72,8 @@ final class BoardLoader {
         }
     }
 
-    static @NotNull Board createBoardFromNode(@NotNull String name, @NotNull MapNode node) {
-        Line title = createLine(node.getMap(PATH_TITLE));
+    private static @NotNull Board createBoardFromNode(@NotNull LineFormat.Compiler compiler, @NotNull String name, @NotNull MapNode node) {
+        Line title = createLine(compiler, node.getMap(PATH_TITLE));
 
         List<Line> lines;
 
@@ -79,7 +81,7 @@ final class BoardLoader {
             lines = linesSection.value().values().stream()
                     .filter(MapNode.class::isInstance)
                     .map(MapNode.class::cast)
-                    .map(BoardLoader::createLine)
+                    .map(mapNode -> createLine(compiler, mapNode))
                     .toList();
         } else {
             lines = Collections.emptyList();
@@ -103,8 +105,8 @@ final class BoardLoader {
         return name.substring(0, name.lastIndexOf('.'));
     }
 
-    private static @NotNull Line createLine(@NotNull MapNode source) {
-        List<String> lineList = source.getList(PATH_LIST).asList(String.class);
+    private static @NotNull Line createLine(@NotNull LineFormat.Compiler compiler, @NotNull MapNode source) {
+        List<LineFormat> lineList = source.getList(PATH_LIST).asList(String.class).stream().map(LegacyComponentSerializer.legacyAmpersand()::deserialize).map(compiler::compile).toList();
         if (lineList.isEmpty()) {
             return Line.EMPTY;
         } else {
