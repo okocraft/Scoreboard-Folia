@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     paperweight.foliaDevBundle("$mcVersion-R0.1-SNAPSHOT")
-    compileOnly("me.clip:placeholderapi:2.11.5")
+    compileOnly("me.clip:placeholderapi:2.11.6")
 
     implementation("com.github.siroshun09.configapi:configapi-format-yaml:5.0.0-beta.3") {
         exclude("org.yaml", "snakeyaml")
