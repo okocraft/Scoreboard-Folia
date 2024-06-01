@@ -8,8 +8,8 @@ A packet-based version of [Scoreboard](https://github.com/okocraft/Scoreboard).
 
 ## Requirements
 
-- Java 17+
-- Paper, Folia, or its forks
+- Java 21+
+- Paper, Folia, or its forks (This fork requires a specific Minecraft version)
 - (Optional) [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/)
 
 For more information, please read [Scoreboard's README](https://github.com/okocraft/Scoreboard).
@@ -18,4 +18,4 @@ For more information, please read [Scoreboard's README](https://github.com/okocr
 
 This project is licensed under the permissive GPL-3.0 license. Please see [LICENSE](LICENSE) for more info.
 
-Copyright © 2023, okocraft
+Copyright © 2023-2024, okocraft
