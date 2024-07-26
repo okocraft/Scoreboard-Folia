@@ -1,0 +1,11 @@
+name: Scoreboard
+version: "${projectVersion}"
+main: net.okocraft.scoreboard.ScoreboardPlugin
+bootstrapper: net.okocraft.scoreboard.bootstrap.ScoreboardFoliaBootstrap
+api-version: "${apiVersion}"
+folia-supported: true
+
+dependencies:
+  server:
+    PlaceholderAPI:
+      required: false

@@ -254,3 +254,5 @@ gradle-app.setting
 .idea
 
 # End of https://www.toptal.com/developers/gitignore/api/java,gradle,intellij,visualstudiocode,eclipse,netbeans
+
+!libs/Scoreboard-5.0-SNAPSHOT.jar

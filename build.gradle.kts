@@ -1,55 +1,65 @@
 plugins {
     `java-library`
-    id("io.papermc.paperweight.userdev") version "1.7.1"
     id("io.github.goooler.shadow") version "8.1.7"
 }
 
-group = "net.okocraft.scoreboard"
-version = "5.0-SNAPSHOT"
+project.extra["paperVersion"] = "1.20.6"
+project.extra["foliaVersion"] = "1.20.6"
+project.extra["apiVersion"] = "1.20"
 
-val mcVersion = "1.20.6"
-val fullVersion = "${version}-mc${mcVersion}"
+val fullVersion = "${version}-mc${project.extra["paperVersion"]}"
+
+allprojects {
+    apply(plugin = "java-library")
+
+    val javaVersion = JavaVersion.VERSION_21
+    val charset = Charsets.UTF_8
+
+    java {
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
+
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(javaVersion.ordinal + 1))
+        }
+    }
+
+    tasks {
+        compileJava {
+            options.encoding = charset.name()
+            options.release.set(javaVersion.ordinal + 1)
+        }
+
+        processResources {
+            filteringCharset = charset.name()
+        }
+    }
+
+    dependencies {
+        implementation(files(rootDir.resolve("libs/Scoreboard-5.0-SNAPSHOT.jar")))
+    }
+}
 
 repositories {
-    mavenLocal()
-    mavenCentral()
     maven {
-        url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
 }
 
 dependencies {
-    paperweight.foliaDevBundle("$mcVersion-R0.1-SNAPSHOT")
-    compileOnly("me.clip:placeholderapi:2.11.6")
-
-    implementation("com.github.siroshun09.configapi:configapi-format-yaml:5.0.0-beta.3") {
-        exclude("org.yaml", "snakeyaml")
-    }
-    implementation("com.github.siroshun09.messages:messages-minimessage:0.8.0")
+    compileOnly("io.papermc.paper:paper-api:${project.extra["paperVersion"]}-R0.1-SNAPSHOT")
+    implementation(projects.scoreboardFoliaPacketDisplay)
+    implementation(projects.scoreboardFoliaPlaceholders)
 }
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
-paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 
 tasks {
     build {
         dependsOn(shadowJar)
     }
 
-    compileJava {
-        options.encoding = Charsets.UTF_8.name()
-        options.release.set(21)
-    }
-
     processResources {
-        filteringCharset = Charsets.UTF_8.name()
-
-        filesMatching(listOf("plugin.yml")) {
-            expand("projectVersion" to fullVersion)
+        filesMatching(listOf("paper-plugin.yml")) {
+            expand("projectVersion" to fullVersion, "apiVersion" to project.extra["apiVersion"])
         }
     }
 
@@ -57,5 +67,9 @@ tasks {
         minimize()
         relocate("com.github.siroshun09", "${project.group}.libs")
         archiveFileName = "Scoreboard-${fullVersion}.jar"
+
+        manifest {
+            attributes("paperweight-mappings-namespace" to "mojang")
+        }
     }
 }
