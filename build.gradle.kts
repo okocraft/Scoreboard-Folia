@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("io.github.goooler.shadow") version "8.1.7"
+    id("io.github.goooler.shadow") version "8.1.8"
 }
 
 project.extra["paperVersion"] = "1.20.6"
