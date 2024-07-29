@@ -3,7 +3,7 @@ plugins {
     id("io.github.goooler.shadow") version "8.1.8"
 }
 
-project.extra["paperVersion"] = "1.20.6"
+project.extra["paperVersion"] = "1.21"
 project.extra["foliaVersion"] = "1.20.6"
 project.extra["apiVersion"] = "1.20"
 
