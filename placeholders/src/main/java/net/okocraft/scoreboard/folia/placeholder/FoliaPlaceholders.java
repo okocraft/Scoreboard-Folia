@@ -29,8 +29,8 @@ public class FoliaPlaceholders {
 
     private static final VarHandle FOLIA_REGIONIZER_REGIONS_BY_ID;
 
-    private static final TextColor MSPT_WARN_ORANGE_COLOR = TextColor.color(0xff4b00);
-    private static final TextColor MSPT_WARN_RED_COLOR = TextColor.color(0xf6aa00);
+    private static final TextColor MSPT_WARN_ORANGE_COLOR = TextColor.color(0xf6aa00);
+    private static final TextColor MSPT_WARN_RED_COLOR = TextColor.color(0xff4b00);
 
     static {
         VarHandle regionsById;
