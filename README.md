@@ -18,4 +18,4 @@ For more information, please read [Scoreboard's README](https://github.com/okocr
 
 This project is licensed under the permissive GPL-3.0 license. Please see [LICENSE](LICENSE) for more info.
 
-Copyright © 2023-2024, okocraft
+Copyright © 2023-2025, okocraft
