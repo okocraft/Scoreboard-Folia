@@ -3,7 +3,7 @@ plugins {
     id("com.gradleup.shadow") version "8.3.6"
 }
 
-project.extra["paperVersion"] = "1.21.4"
+project.extra["paperVersion"] = "1.21.5"
 project.extra["foliaVersion"] = "1.21.4"
 project.extra["apiVersion"] = "1.21"
 
