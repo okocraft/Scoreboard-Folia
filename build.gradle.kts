@@ -4,7 +4,7 @@ plugins {
 }
 
 project.extra["paperVersion"] = "1.21.5"
-project.extra["foliaVersion"] = "1.21.4"
+project.extra["foliaVersion"] = "1.21.5"
 project.extra["apiVersion"] = "1.21"
 
 val fullVersion = "${version}-mc${project.extra["paperVersion"]}"
