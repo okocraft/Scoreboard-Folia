@@ -1,6 +1,7 @@
 plugins {
     `java-library`
     id("com.gradleup.shadow") version "8.3.7"
+    id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 project.extra["paperVersion"] = "1.21.5"
@@ -72,4 +73,8 @@ tasks {
             attributes("paperweight-mappings-namespace" to "mojang")
         }
     }
+}
+
+runPaper.folia.registerTask {
+    minecraftVersion(project.extra["foliaVersion"].toString())
 }
