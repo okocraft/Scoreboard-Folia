@@ -2,8 +2,13 @@ name: Gradle Build
 on: [ push, pull_request ]
 
 jobs:
-  build:
+  build-java-21:
     uses: okocraft/workflows/.github/workflows/gradle.yml@v1
     with:
       java-version: '21'
+      package-name: Scoreboard-Folia-Build-${{ github.run_number }}
+  build-java-25:
+    uses: okocraft/workflows/.github/workflows/gradle.yml@v1
+    with:
+      java-version: '25'
       package-name: Scoreboard-Folia-Build-${{ github.run_number }}
