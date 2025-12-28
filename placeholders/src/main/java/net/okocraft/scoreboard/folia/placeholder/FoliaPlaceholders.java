@@ -1,9 +1,9 @@
 package net.okocraft.scoreboard.folia.placeholder;
 
 import ca.spottedleaf.concurrentutil.map.SWMRLong2ObjectHashTable;
+import ca.spottedleaf.moonrise.common.time.TickData;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task.ChunkFullTask;
 import io.papermc.paper.threadedregions.ThreadedRegionizer;
-import io.papermc.paper.threadedregions.TickData;
 import io.papermc.paper.threadedregions.TickRegions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;

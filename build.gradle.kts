@@ -4,8 +4,8 @@ plugins {
     id("xyz.jpenilla.run-paper") version "3.0.2"
 }
 
-project.extra["paperVersion"] = "1.21.9"
-project.extra["foliaVersion"] = "1.21.8"
+project.extra["paperVersion"] = "1.21.11"
+project.extra["foliaVersion"] = "1.21.11"
 project.extra["apiVersion"] = "1.21"
 
 val fullVersion = "${version}-mc${project.extra["paperVersion"]}"
