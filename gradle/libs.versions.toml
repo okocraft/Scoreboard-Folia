@@ -1,0 +1,17 @@
+[versions]
+
+paper = "26.1.2.build.64-stable"
+folia = "26.1.2.build.8-stable"
+
+[libraries]
+
+paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
+# Not used in the project but declared here for Renovate
+folia-api = { module = "dev.folia:folia-api", version.ref = "folia" }
+
+[plugins]
+
+paperweight-userdev = { id = "io.papermc.paperweight.userdev", version = "2.0.0-beta.21" }
+run-paper = { id = "xyz.jpenilla.run-paper", version = "3.0.2" }
+jcommon = { id = "dev.siroshun.gradle.plugins.jcommon", version = "1.8.4" }
+bundler = { id = "dev.siroshun.gradle.plugins.bundler", version = "1.8.4" }

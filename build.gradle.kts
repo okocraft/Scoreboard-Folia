@@ -1,41 +1,18 @@
 plugins {
     `java-library`
-    id("com.gradleup.shadow") version "9.4.1"
-    id("xyz.jpenilla.run-paper") version "3.0.2"
+    alias(libs.plugins.jcommon)
+    alias(libs.plugins.bundler)
+    alias(libs.plugins.run.paper)
 }
 
-project.extra["paperVersion"] = "1.21.11"
-project.extra["foliaVersion"] = "1.21.11"
+val mcVersion = libs.versions.paper.get().replaceAfter(".build", "").removeSuffix(".build")
+val fullVersion = "${version}-mc${mcVersion}"
 
-val apiVersion = "1.21"
-val fullVersion = "${version}-mc${project.extra["paperVersion"]}"
+jcommon {
+    javaVersion = JavaVersion.VERSION_25
+}
 
 allprojects {
-    apply(plugin = "java-library")
-
-    val javaVersion = JavaVersion.VERSION_25
-    val charset = Charsets.UTF_8
-
-    java {
-        sourceCompatibility = javaVersion
-        targetCompatibility = javaVersion
-
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(javaVersion.ordinal + 1))
-        }
-    }
-
-    tasks {
-        compileJava {
-            options.encoding = charset.name()
-            options.release.set(javaVersion.ordinal + 1)
-        }
-
-        processResources {
-            filteringCharset = charset.name()
-        }
-    }
-
     dependencies {
         implementation(files(rootDir.resolve("libs/Scoreboard-5.0-SNAPSHOT.jar")))
     }
@@ -48,33 +25,16 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:${project.extra["paperVersion"]}-R0.1-SNAPSHOT")
+    compileOnly(libs.paper.api)
     implementation(projects.scoreboardFoliaPacketDisplay)
     implementation(projects.scoreboardFoliaPlaceholders)
 }
 
-tasks {
-    build {
-        dependsOn(shadowJar)
-    }
-
-    processResources {
-        filesMatching(listOf("paper-plugin.yml")) {
-            expand("projectVersion" to fullVersion, "apiVersion" to apiVersion)
-        }
-    }
-
-    shadowJar {
-        minimize()
-        relocate("com.github.siroshun09", "${project.group}.libs")
-        archiveFileName = "Scoreboard-${fullVersion}.jar"
-
-        manifest {
-            attributes("paperweight-mappings-namespace" to "mojang")
-        }
-    }
+bundler {
+    replacePluginVersionForPaper(fullVersion, mcVersion)
+    copyToRootBuildDirectory("Scoreboard-${fullVersion}.jar")
 }
 
 runPaper.folia.registerTask {
-    minecraftVersion(project.extra["foliaVersion"].toString())
+    minecraftVersion(mcVersion)
 }

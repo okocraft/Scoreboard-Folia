@@ -45,10 +45,10 @@ public class FoliaPlaceholders {
 
     public static void registerDefaults(@NotNull PlaceholderProvider target) {
         target.register("world_total_regions", context -> text(formatInt(getWorldRegionCount(context.world()))));
-        target.register("server_total_regions", context -> text(formatInt(getGlobalRegionCount())));
+        target.register("server_total_regions", _ -> text(formatInt(getGlobalRegionCount())));
 
-        target.register("server_chunk_load_rate", context -> text(formatDouble(getLoadRate())));
-        target.register("server_chunk_gen_rate", context -> text(formatDouble(getGenRate())));
+        target.register("server_chunk_load_rate", _ -> text(formatDouble(getLoadRate())));
+        target.register("server_chunk_gen_rate", _ -> text(formatDouble(getGenRate())));
 
         Placeholder tpsPlaceholder = context -> text(formatDouble(getFromRegionReport(context, report -> report.tpsData().segmentAll().average())));
         target.register("server_tps", tpsPlaceholder); // overwrite to %server_tps% due to Bukkit.getTPS() always returns 20.00

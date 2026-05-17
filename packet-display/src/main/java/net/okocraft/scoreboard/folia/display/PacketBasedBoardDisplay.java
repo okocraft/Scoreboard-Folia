@@ -198,7 +198,7 @@ public class PacketBasedBoardDisplay implements BoardDisplay {
 
     private ScheduledTask scheduleUpdateTask(@NotNull LineDisplay display, boolean isTitleLine, long interval) {
         var duration = Tick.of(interval);
-        return Bukkit.getAsyncScheduler().runAtFixedRate(JavaPlugin.getPlugin(ScoreboardPlugin.class), $ -> this.update(display, isTitleLine), duration.toMillis(), duration.toMillis(), TimeUnit.MILLISECONDS);
+        return Bukkit.getAsyncScheduler().runAtFixedRate(JavaPlugin.getPlugin(ScoreboardPlugin.class), _ -> this.update(display, isTitleLine), duration.toMillis(), duration.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     private void update(@NotNull LineDisplay display, boolean isTitleLine) {
