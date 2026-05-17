@@ -13,7 +13,7 @@ val fullVersion = "${version}-mc${project.extra["paperVersion"]}"
 allprojects {
     apply(plugin = "java-library")
 
-    val javaVersion = JavaVersion.VERSION_21
+    val javaVersion = JavaVersion.VERSION_25
     val charset = Charsets.UTF_8
 
     java {

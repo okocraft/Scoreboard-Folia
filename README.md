@@ -8,7 +8,7 @@ A packet-based version of [Scoreboard](https://github.com/okocraft/Scoreboard).
 
 ## Requirements
 
-- Java 21+
+- Java 25+
 - Paper, Folia, or its forks (This fork requires a specific Minecraft version)
 - (Optional) [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/)
 
