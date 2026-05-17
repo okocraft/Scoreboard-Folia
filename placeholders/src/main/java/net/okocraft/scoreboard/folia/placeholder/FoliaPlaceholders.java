@@ -108,11 +108,11 @@ public class FoliaPlaceholders {
 
     private static @NotNull Component colorizeMSPT(@NotNull TextComponent.Builder builder, double value) {
         if (value < 45) {
-            return builder.build();
+            return builder.asComponent();
         } else if (55 < value) {
-            return builder.color(MSPT_WARN_RED_COLOR).build();
+            return builder.color(MSPT_WARN_RED_COLOR).asComponent();
         } else {
-            return builder.color(MSPT_WARN_ORANGE_COLOR).build();
+            return builder.color(MSPT_WARN_ORANGE_COLOR).asComponent();
         }
     }
 
