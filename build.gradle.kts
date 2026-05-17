@@ -6,8 +6,8 @@ plugins {
 
 project.extra["paperVersion"] = "1.21.11"
 project.extra["foliaVersion"] = "1.21.11"
-project.extra["apiVersion"] = "1.21"
 
+val apiVersion = "1.21"
 val fullVersion = "${version}-mc${project.extra["paperVersion"]}"
 
 allprojects {
@@ -60,7 +60,7 @@ tasks {
 
     processResources {
         filesMatching(listOf("paper-plugin.yml")) {
-            expand("projectVersion" to fullVersion, "apiVersion" to project.extra["apiVersion"].toString())
+            expand("projectVersion" to fullVersion, "apiVersion" to apiVersion)
         }
     }
 
