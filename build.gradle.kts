@@ -14,7 +14,7 @@ jcommon {
 
 allprojects {
     dependencies {
-        implementation(files(rootDir.resolve("libs/Scoreboard-5.0-SNAPSHOT.jar")))
+        implementation(files(rootDir.resolve("libs/Scoreboard-5.0.jar")))
     }
 }
 
