@@ -1,6 +1,6 @@
 [versions]
 
-paper = "26.2.build.121-stable"
+paper = "26.2.build.123-stable"
 folia = "26.2.build.7-beta"
 
 [libraries]
